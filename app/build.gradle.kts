@@ -80,6 +80,11 @@ dependencies {
     kapt(libs.hilt.android.compiler)
     annotationProcessor("com.google.dagger:hilt-android-compiler:2.51.1")
 
+    //coil image
+    implementation(libs.coil.compose)
+
+    //lottie animation
+    implementation(libs.lottie.compose)
 
 
 }
