@@ -12,17 +12,18 @@ import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.displayCutoutPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -40,11 +41,17 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
+import com.airbnb.lottie.compose.LottieAnimation
+import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.LottieConstants
+import com.airbnb.lottie.compose.rememberLottieComposition
+import com.example.aniplex.DataLayer.Result
 import com.example.aniplex.R
 import com.example.aniplex.ViewModal.AniplexViewModal
+import com.example.aniplex.ViewModal.GetRecentEpisodes
 
 
 @Composable
@@ -72,8 +79,9 @@ fun HomeScreen( AniplexViewModal: AniplexViewModal) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(10.dp)
+
         ) {
+            Spacer(modifier= Modifier.displayCutoutPadding())
             Text(
                 text = "Aniplex",
                 fontSize = 35.sp,
@@ -81,7 +89,7 @@ fun HomeScreen( AniplexViewModal: AniplexViewModal) {
                 modifier = Modifier.fillMaxWidth(),
                 fontFamily = FontFamily.Serif,
                 color = Color.White,
-                letterSpacing = 7.sp
+                letterSpacing = 7.sp,
             )
 
             Text(
@@ -130,7 +138,37 @@ fun HomeScreen( AniplexViewModal: AniplexViewModal) {
 
             Text("Resent Released ", fontSize = 25.sp , fontFamily = FontFamily.Serif , color = Color.White , modifier = Modifier.padding(bottom = 10.dp))
 
-            NewAnimeCard()
+            Box(modifier = Modifier
+                .fillMaxWidth()
+                .height(200.dp)){
+                when(AniplexViewModal.recentEpisodes){
+                    is  GetRecentEpisodes.Success -> {
+                        LazyRow (modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp) , horizontalArrangement = Arrangement.Center , verticalAlignment = Alignment.CenterVertically){
+                            items(items = (AniplexViewModal.recentEpisodes as GetRecentEpisodes.Success).data.results ){
+                                data -> NewAnimeCard(data)
+
+
+                            }
+                        }
+
+                    }
+
+                    is GetRecentEpisodes.Error -> {
+                        val composition by rememberLottieComposition(spec = LottieCompositionSpec.RawRes(R.raw.error))
+                        LottieAnimation(composition = composition, iterations = LottieConstants.IterateForever, modifier = Modifier.size(150.dp))
+                    }
+
+                    is GetRecentEpisodes.Loading -> {
+                        val composition by rememberLottieComposition(spec = LottieCompositionSpec.RawRes(R.raw.loading))
+                        LottieAnimation(composition = composition, iterations = LottieConstants.IterateForever, modifier = Modifier.size(150.dp))
+                    }
+
+                }
+            }
+
+           // NewAnimeCard()
             Text(" Popular ", fontSize = 25.sp , fontFamily = FontFamily.Serif , color = Color.White , modifier = Modifier.padding(bottom = 10.dp))
             AnimeCard()
 
@@ -140,7 +178,7 @@ fun HomeScreen( AniplexViewModal: AniplexViewModal) {
 
 
 @Composable
-fun NewAnimeCard (){
+fun NewAnimeCard(data: Result) {
     Box(
         modifier = Modifier
             .border(width = 2.dp, color = Color.White, shape = RoundedCornerShape(25.dp))
@@ -148,15 +186,15 @@ fun NewAnimeCard (){
             .size(140.dp, 200.dp),
     ){
 
-        Image(painter = painterResource(R.drawable.naruto) , contentDescription = "naruto img ", modifier = Modifier.fillMaxSize(),contentScale = ContentScale.Crop)
-        Text("Ep:2000" ,
-            fontSize = 8.sp ,
+        AsyncImage(model = data.image , contentDescription = data.title , alignment = Alignment.BottomStart ,  modifier = Modifier.fillMaxSize(),contentScale = ContentScale.Crop)
+        Text("Ep : ${data.episodeNumber.toString()}" ,
+            fontSize = 10.sp ,
             color = Color.White ,
             textAlign = TextAlign.Start ,
             modifier = Modifier
                 .clip(shape = RoundedCornerShape(bottomEnd = 25.dp))
                 .background(Color(0xFF2582f3))
-                .padding(start = 8.dp, top = 2.dp, bottom = 2.dp, end = 5.dp)
+                .padding(start = 10.dp, top = 2.dp, bottom = 2.dp, end = 10.dp)
         )
 
         Column(
@@ -166,7 +204,7 @@ fun NewAnimeCard (){
             verticalArrangement = Arrangement.Bottom,
             horizontalAlignment = Alignment.CenterHorizontally
         ){
-            Text( text = "Naruto  " , modifier = Modifier
+            Text( text = data.title , modifier = Modifier
                 .padding(bottom = 2.dp)
                 .fillMaxWidth(), fontSize = 10.sp , color = Color.White , textAlign = TextAlign.Center , fontWeight = FontWeight.Bold)
         }

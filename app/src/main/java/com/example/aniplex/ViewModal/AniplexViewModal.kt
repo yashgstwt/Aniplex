@@ -35,19 +35,10 @@ class AniplexViewModal @Inject constructor( private val repo : AniplexRepo) : Vi
 
     init {
         viewModelScope.launch {
-            try {
-                val response = repo.getRecentEpisodes(1,2)
-                val gson = GsonBuilder().setPrettyPrinting().create()
-                val json = gson.toJson(response)
-                Log.d("API Response", json)
-            } catch (e: Exception) {
-                Log.d("API Response", "Exception ::" + e.toString())
-            }
+           getRecentEpisode()
 
         }
 
-
-        //var res = getRecentEpisode()
 
     }
 
@@ -55,19 +46,22 @@ class AniplexViewModal @Inject constructor( private val repo : AniplexRepo) : Vi
     fun getRecentEpisode(){
         viewModelScope.launch {
             recentEpisodes = try {
-                Log.d("API", "************************************${repo.getRecentEpisodes().toString()}")
-                GetRecentEpisodes.Success(repo.getRecentEpisodes())
+             //   Log.d("API", "************************************${repo.getRecentEpisodes().toString()}")
+                GetRecentEpisodes.Success(repo.getRecentEpisodes(1,2))
             }catch (e:Exception){
                 GetRecentEpisodes.Error(e)
+
+
             }catch (e: HttpException){
                 GetRecentEpisodes.Error(e)
             }
-            Log.d("Api" , "....................${recentEpisodes.toString()}")
+            // Log.d("Api" , "....................${recentEpisodes}")
+
         }
     }
 
 //old api
-    fun getRecentReleased(){
+    fun getAnimeInfo(){
         viewModelScope.launch {
             recentReleased = try {
                 GetAnimeInfo.Success(repo.getAnimeInfo(""))
