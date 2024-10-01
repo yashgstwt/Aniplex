@@ -69,8 +69,7 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
-    //okHttp
-    implementation(libs.okhttp)
+
     //retrofit
     implementation (libs.retrofit)
     implementation(libs.kotlinx.coroutines.android)
@@ -78,9 +77,9 @@ dependencies {
 
     //dagger hilt dependency
     implementation (libs.hilt.android)
-    kapt (libs.hilt.compiler)
-    implementation (libs.androidx.hilt.navigation.compose)
-    implementation(libs.logging.interceptor)
+    kapt(libs.hilt.android.compiler)
+    annotationProcessor("com.google.dagger:hilt-android-compiler:2.51.1")
+
 
 
 }

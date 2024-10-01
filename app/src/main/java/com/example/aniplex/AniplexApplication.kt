@@ -5,6 +5,4 @@ import dagger.hilt.android.HiltAndroidApp
 
 
 @HiltAndroidApp
-class AniplexApplication : Application() {
-
-}
+class AniplexApplication : Application()

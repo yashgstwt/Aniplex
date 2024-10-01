@@ -18,7 +18,6 @@ import javax.inject.Inject
 @HiltViewModel
 class AniplexViewModal @Inject constructor( private val repo : AniplexRepo) : ViewModel() {
 
-
     var recentReleased : GetAnimeInfo by mutableStateOf(GetAnimeInfo.Loading)
     private set
 
@@ -42,7 +41,7 @@ class AniplexViewModal @Inject constructor( private val repo : AniplexRepo) : Vi
                 val json = gson.toJson(response)
                 Log.d("API Response", json)
             } catch (e: Exception) {
-                Log.d("API Response", e.toString())
+                Log.d("API Response", "Exception ::" + e.toString())
             }
 
         }
