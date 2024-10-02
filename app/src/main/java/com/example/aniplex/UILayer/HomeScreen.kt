@@ -6,6 +6,7 @@ import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
@@ -44,21 +45,19 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import com.airbnb.lottie.compose.LottieAnimation
-import com.airbnb.lottie.compose.LottieCompositionSpec
-import com.airbnb.lottie.compose.LottieConstants
-import com.airbnb.lottie.compose.rememberLottieComposition
 import com.example.aniplex.DataLayer.Result
 import com.example.aniplex.R
 import com.example.aniplex.ViewModal.AniplexViewModal
 import com.example.aniplex.ViewModal.GetRecentEpisodes
+import com.example.aniplex.ui.theme.black
+import com.example.aniplex.ui.theme.gradiantColor
 
 
 @Composable
-fun HomeScreen( AniplexViewModal: AniplexViewModal) {
+fun HomeScreen( AniplexViewModal: AniplexViewModal ) {
 
     Log.d("LOG","HomeScreen............................................................................")
-    var brush: List<Color> = listOf(Color(0xFF6B7777), Color(0xFF000000))
+    var brush: List<Color> = listOf(gradiantColor , black)
 
     val trendingPageList: List<Int> = listOf(
         R.drawable.nature,
@@ -71,10 +70,12 @@ fun HomeScreen( AniplexViewModal: AniplexViewModal) {
 
     var offsetX by remember { mutableStateOf(0f) }
 
+
     Column (modifier = Modifier
         .fillMaxSize()
         .background(brush = Brush.verticalGradient(brush))
         .verticalScroll(scrollState)
+        .padding(10.dp)
     ) {
         Column(
             modifier = Modifier
@@ -82,15 +83,24 @@ fun HomeScreen( AniplexViewModal: AniplexViewModal) {
 
         ) {
             Spacer(modifier= Modifier.displayCutoutPadding())
-            Text(
-                text = "Aniplex",
-                fontSize = 35.sp,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth(),
-                fontFamily = FontFamily.Serif,
-                color = Color.White,
-                letterSpacing = 7.sp,
-            )
+            Box(modifier = Modifier.fillMaxWidth().border(2.dp, color = Color.White, shape = RoundedCornerShape(25.dp))){
+                Image(painter = painterResource(R.drawable.mochuro) ,
+                    contentDescription = "cover image " ,
+                    modifier = Modifier.padding(start = 10.dp)
+                        .size(70.dp)
+                        .align(Alignment.BottomStart) ,
+                    contentScale = ContentScale.Crop)
+                Text(
+                    text = "Aniplex",
+                    fontSize = 35.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth().align(Alignment.Center),
+                    fontFamily = FontFamily.Serif,
+                    color = Color.White,
+                    letterSpacing = 7.sp,
+
+                )
+            }
 
             Text(
                 "Trending",
@@ -156,13 +166,11 @@ fun HomeScreen( AniplexViewModal: AniplexViewModal) {
                     }
 
                     is GetRecentEpisodes.Error -> {
-                        val composition by rememberLottieComposition(spec = LottieCompositionSpec.RawRes(R.raw.error))
-                        LottieAnimation(composition = composition, iterations = LottieConstants.IterateForever, modifier = Modifier.size(150.dp))
+                        ErrorScreen()
                     }
 
                     is GetRecentEpisodes.Loading -> {
-                        val composition by rememberLottieComposition(spec = LottieCompositionSpec.RawRes(R.raw.loading))
-                        LottieAnimation(composition = composition, iterations = LottieConstants.IterateForever, modifier = Modifier.size(150.dp))
+                        Loading()
                     }
 
                 }
@@ -183,8 +191,11 @@ fun NewAnimeCard(data: Result) {
         modifier = Modifier
             .border(width = 2.dp, color = Color.White, shape = RoundedCornerShape(25.dp))
             .clip(RoundedCornerShape(25.dp))
-            .size(140.dp, 200.dp),
+            .size(140.dp, 200.dp).clickable {
+               // AniplexViewModal.selectedAnimeInfoID = data.id
+            },
     ){
+
 
         AsyncImage(model = data.image , contentDescription = data.title , alignment = Alignment.BottomStart ,  modifier = Modifier.fillMaxSize(),contentScale = ContentScale.Crop)
         Text("Ep : ${data.episodeNumber.toString()}" ,
@@ -246,11 +257,3 @@ fun AnimeCard (){
 }
 
 
-//@Preview(showSystemUi = true)
-//@Composable
-//fun pre(){
-//
-//    Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-//        HomeScreen(innerPadding, AniplexViewModal)
-//    }
-//}

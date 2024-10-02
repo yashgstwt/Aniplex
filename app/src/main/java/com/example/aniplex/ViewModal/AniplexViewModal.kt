@@ -4,6 +4,7 @@ package com.example.aniplex.ViewModal
 import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -31,6 +32,8 @@ class AniplexViewModal @Inject constructor( private val repo : AniplexRepo) : Vi
     private set
 
     var search : GetSearch by mutableStateOf(GetSearch.Loading)
+
+    var selectedAnimeInfoID: String by mutableStateOf("")
 
 
     init {
