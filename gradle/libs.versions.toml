@@ -15,6 +15,7 @@ composeBom = "2024.09.02"
 lottieCompose = "6.4.0"
 retrofit = "2.11.0"
 coilCompose = "2.6.0"
+navigationCompose = "2.8.2"
 
 [libraries]
 coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coilCompose" }
@@ -38,6 +39,7 @@ androidx-material3 = { group = "androidx.compose.material3", name = "material3" 
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinxCoroutinesAndroid" }
 
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
+androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
