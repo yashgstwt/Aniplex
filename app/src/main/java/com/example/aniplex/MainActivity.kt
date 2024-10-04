@@ -5,9 +5,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import com.example.aniplex.Navigation.Navigation
 import com.example.aniplex.UILayer.DetailScreen
-import com.example.aniplex.UILayer.HomeScreen
-import com.example.aniplex.UILayer.Loading
 import com.example.aniplex.ViewModal.AniplexViewModal
 import com.example.aniplex.ui.theme.AniplexTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -21,9 +20,7 @@ class MainActivity : ComponentActivity() {
             AniplexTheme {
                 val AniplexViewModal : AniplexViewModal by viewModels()
 
-                //HomeScreen( AniplexViewModal)
-                DetailScreen ()
-
+                Navigation( AniplexViewModal)
 
             }
         }

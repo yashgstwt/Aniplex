@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -44,14 +43,16 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavHostController
 import com.example.aniplex.R
+import com.example.aniplex.ViewModal.AniplexViewModal
 import com.example.aniplex.ui.theme.black
 import com.example.aniplex.ui.theme.gradiantColor
 
 
-@Preview(showSystemUi = true )
+
 @Composable
-fun DetailScreen () {
+fun DetailScreen(viewModal: AniplexViewModal, navController: NavHostController) {
     val scrollState = rememberScrollState()
 
     var brush: List<Color> = listOf(gradiantColor , black)
@@ -153,11 +154,7 @@ fun DetailScreen () {
 
         Text("Description"  , fontSize = 20.sp , color = Color.White , fontFamily = FontFamily.Serif)
         Column (modifier = Modifier.fillMaxWidth().height(500.dp).padding(top= 10.dp).verticalScroll(scrollState)){
-            Text("One final piece that is left out to use in CompositionLocalProvider is layout width. This can get from LocalConfiguration#ScreenWidthDp which is the width of the App at any point of time (single app, split mode, window mode, orientation changed, or any other in future).\n" +
-                    "\n" +
-                    "Note: layout width need not be the complete width of the app, it can also be part of the screen in situations like a two-pane layout, sliding-pane, etc.,\n" +
-                    "\n" +
-                    "Everything is done, ready to code by just passing the formed GridConfiguration value in CompositionLocalProvider" , color = Color.White)
+            Text("", color = Color.White)
 
         }
 

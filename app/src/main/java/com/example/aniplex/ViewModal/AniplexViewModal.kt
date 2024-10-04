@@ -8,6 +8,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.example.aniplex.Repository.AniplexRepo
 import com.google.gson.GsonBuilder
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -41,8 +43,6 @@ class AniplexViewModal @Inject constructor( private val repo : AniplexRepo) : Vi
            getRecentEpisode()
 
         }
-
-
     }
 
 //new api

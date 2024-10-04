@@ -44,6 +44,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.example.aniplex.DataLayer.Result
 import com.example.aniplex.R
@@ -51,10 +52,16 @@ import com.example.aniplex.ViewModal.AniplexViewModal
 import com.example.aniplex.ViewModal.GetRecentEpisodes
 import com.example.aniplex.ui.theme.black
 import com.example.aniplex.ui.theme.gradiantColor
+import javax.inject.Singleton
 
+data class  selectedAnimeId (var id : String)
 
 @Composable
-fun HomeScreen( AniplexViewModal: AniplexViewModal ) {
+fun HomeScreen(AniplexViewModal: AniplexViewModal, navController: NavHostController) {
+
+    @Singleton var SelectedAinmeId =  selectedAnimeId("")
+
+    AniplexViewModal.selectedAnimeInfoID = SelectedAinmeId.id
 
     Log.d("LOG","HomeScreen............................................................................")
     var brush: List<Color> = listOf(gradiantColor , black)
@@ -157,7 +164,7 @@ fun HomeScreen( AniplexViewModal: AniplexViewModal ) {
                             .fillMaxWidth()
                             .height(200.dp) , horizontalArrangement = Arrangement.Center , verticalAlignment = Alignment.CenterVertically){
                             items(items = (AniplexViewModal.recentEpisodes as GetRecentEpisodes.Success).data.results ){
-                                data -> NewAnimeCard(data)
+                                data -> NewAnimeCard(data , SelectedAinmeId)
 
 
                             }
@@ -186,19 +193,21 @@ fun HomeScreen( AniplexViewModal: AniplexViewModal ) {
 
 
 @Composable
-fun NewAnimeCard(data: Result) {
+fun NewAnimeCard(data: Result, SelectedAinmeId: selectedAnimeId,   ) {
     Box(
         modifier = Modifier
             .border(width = 2.dp, color = Color.White, shape = RoundedCornerShape(25.dp))
             .clip(RoundedCornerShape(25.dp))
-            .size(140.dp, 200.dp).clickable {
-               // AniplexViewModal.selectedAnimeInfoID = data.id
-            },
-    ){
+            .size(140.dp, 200.dp)
+            .clickable {
+                SelectedAinmeId.id = data.id
 
+            },
+        )
+    {
 
         AsyncImage(model = data.image , contentDescription = data.title , alignment = Alignment.BottomStart ,  modifier = Modifier.fillMaxSize(),contentScale = ContentScale.Crop)
-        Text("Ep : ${data.episodeNumber.toString()}" ,
+        Text("Ep : ${data.episodeNumber}" ,
             fontSize = 10.sp ,
             color = Color.White ,
             textAlign = TextAlign.Start ,
