@@ -79,10 +79,16 @@ dependencies {
     //dagger hilt dependency
     implementation (libs.hilt.android)
     kapt(libs.hilt.android.compiler)
-   // annotationProcessor("com.google.dagger:hilt-android-compiler:2.51.1")
+
 
     //coil image
     implementation(libs.coil.compose)
+
+    //exoplayer
+    implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.androidx.media3.ui)
+    implementation(libs.media3.exoplayer.hls)
+
 
 
 

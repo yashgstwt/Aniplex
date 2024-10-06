@@ -13,6 +13,7 @@ import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.displayCutoutPadding
 import androidx.compose.foundation.layout.fillMaxSize
@@ -47,6 +48,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.example.aniplex.DataLayer.Result
+import com.example.aniplex.Navigation.NavigationRoutes
 import com.example.aniplex.R
 import com.example.aniplex.ViewModal.AniplexViewModal
 import com.example.aniplex.ViewModal.GetRecentEpisodes
@@ -58,10 +60,6 @@ data class  selectedAnimeId (var id : String)
 
 @Composable
 fun HomeScreen(AniplexViewModal: AniplexViewModal, navController: NavHostController) {
-
-    @Singleton var SelectedAinmeId =  selectedAnimeId("")
-
-    AniplexViewModal.selectedAnimeInfoID = SelectedAinmeId.id
 
     Log.d("LOG","HomeScreen............................................................................")
     var brush: List<Color> = listOf(gradiantColor , black)
@@ -131,8 +129,7 @@ fun HomeScreen(AniplexViewModal: AniplexViewModal, navController: NavHostControl
                             offsetX += delta
                         },
                         onDragStopped = {
-                            if (currentPoster < trendingPageList.size - 1) currentPoster += 1 else currentPoster =
-                                0
+                            if (currentPoster < trendingPageList.size - 1) currentPoster += 1 else currentPoster = 0
                         }
 
                     )
@@ -162,14 +159,18 @@ fun HomeScreen(AniplexViewModal: AniplexViewModal, navController: NavHostControl
                     is  GetRecentEpisodes.Success -> {
                         LazyRow (modifier = Modifier
                             .fillMaxWidth()
-                            .height(200.dp) , horizontalArrangement = Arrangement.Center , verticalAlignment = Alignment.CenterVertically){
+                            .height(200.dp) ,
+                            horizontalArrangement = Arrangement.Center ,
+                            verticalAlignment = Alignment.CenterVertically,
+
+                        ){
                             items(items = (AniplexViewModal.recentEpisodes as GetRecentEpisodes.Success).data.results ){
-                                data -> NewAnimeCard(data , SelectedAinmeId)
+                                data -> NewAnimeCard(data){
 
-
+                                    navController.navigate(NavigationRoutes.DETAIL_SCREEN.toString()+"/$it")
+                                }
                             }
                         }
-
                     }
 
                     is GetRecentEpisodes.Error -> {
@@ -179,28 +180,26 @@ fun HomeScreen(AniplexViewModal: AniplexViewModal, navController: NavHostControl
                     is GetRecentEpisodes.Loading -> {
                         Loading()
                     }
-
                 }
             }
-
-           // NewAnimeCard()
             Text(" Popular ", fontSize = 25.sp , fontFamily = FontFamily.Serif , color = Color.White , modifier = Modifier.padding(bottom = 10.dp))
             AnimeCard()
-
         }
     }
 }
 
 
 @Composable
-fun NewAnimeCard(data: Result, SelectedAinmeId: selectedAnimeId,   ) {
+fun NewAnimeCard(data: Result , OnClick : (id:String) -> Unit = {} ){
     Box(
         modifier = Modifier
+            .padding(start = 5.dp , end=5.dp )
             .border(width = 2.dp, color = Color.White, shape = RoundedCornerShape(25.dp))
             .clip(RoundedCornerShape(25.dp))
             .size(140.dp, 200.dp)
             .clickable {
-                SelectedAinmeId.id = data.id
+               // SelectedAinmeId.id = data.id
+                OnClick(data.id)
 
             },
         )
@@ -224,9 +223,15 @@ fun NewAnimeCard(data: Result, SelectedAinmeId: selectedAnimeId,   ) {
             verticalArrangement = Arrangement.Bottom,
             horizontalAlignment = Alignment.CenterHorizontally
         ){
-            Text( text = data.title , modifier = Modifier
+            Text( text = data.title ,
+                modifier = Modifier
                 .padding(bottom = 2.dp)
-                .fillMaxWidth(), fontSize = 10.sp , color = Color.White , textAlign = TextAlign.Center , fontWeight = FontWeight.Bold)
+                .fillMaxWidth(),
+                fontSize = 10.sp ,
+                color = Color.White ,
+                textAlign = TextAlign.Center ,
+                fontWeight = FontWeight.Bold
+            )
         }
     }
 }
