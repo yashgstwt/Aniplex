@@ -35,7 +35,7 @@ interface ApiEndPoints {
         @Path("id") animeID : String
     ):AnimeInfo
 
-    @GET("watch/{episodeId}?server={serverName}")
+    @GET("watch/{episodeId}")
     suspend fun getStreamingLink(
         @Path("episodeId") episodeId : String,
         @Query("serverName") serverName : String
