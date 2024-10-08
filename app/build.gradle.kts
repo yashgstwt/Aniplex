@@ -71,6 +71,8 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
+    implementation(libs.accompanist.systemuicontroller)
+
     //retrofit
     implementation (libs.retrofit)
     implementation(libs.kotlinx.coroutines.android)

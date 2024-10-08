@@ -7,6 +7,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.aniplex.DataLayer.Episode
 import com.example.aniplex.Repository.AniplexRepo
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
@@ -32,6 +33,8 @@ class AniplexViewModal @Inject constructor( private val repo : AniplexRepo) : Vi
     private set
 
     var search : GetSearch by mutableStateOf(GetSearch.Loading)
+
+    var streamingEpisodes : List<Episode> by mutableStateOf(emptyList<Episode>())
 
 
 

@@ -58,6 +58,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.example.aniplex.DataLayer.AnimeInfo
+import com.example.aniplex.Navigation.NavigationRoutes
 import com.example.aniplex.ViewModal.AniplexViewModal
 import com.example.aniplex.ViewModal.GetAnimeInfo
 import com.example.aniplex.ui.theme.black
@@ -75,8 +76,9 @@ fun DetailScreen(viewModal: AniplexViewModal, navController: NavHostController, 
     when (viewModal.AnimeInfo) {
         is GetAnimeInfo.Success -> {
             Log.d("DetailScreen"," ${ (viewModal.AnimeInfo as GetAnimeInfo.Success).animeInfo }")
-
-            DetailScreenUi((viewModal.AnimeInfo as GetAnimeInfo.Success).animeInfo)
+            var animeInfo:AnimeInfo =  (viewModal.AnimeInfo as GetAnimeInfo.Success).animeInfo
+            viewModal.streamingEpisodes = animeInfo.episodes
+            DetailScreenUi(animeInfo, navController)
         }
 
         is GetAnimeInfo.Error -> {
@@ -90,7 +92,7 @@ fun DetailScreen(viewModal: AniplexViewModal, navController: NavHostController, 
 }
 
 @Composable
-fun DetailScreenUi(animeInfo: AnimeInfo) {
+fun DetailScreenUi(animeInfo: AnimeInfo, navController: NavHostController) {
     var brush: List<Color> = listOf(gradiantColor , black)
 
     Log.d("DetailScreen"," ${animeInfo.url}")
@@ -154,9 +156,6 @@ fun DetailScreenUi(animeInfo: AnimeInfo) {
             )
 
 
-
-
-
             Row(
                 modifier = Modifier
                     .padding(top = 20.dp)
@@ -167,7 +166,10 @@ fun DetailScreenUi(animeInfo: AnimeInfo) {
                     modifier = Modifier
                         .clip(shape = RoundedCornerShape(25.dp))
                         .background(gradiantColor)
-                        .size(100.dp, 50.dp),
+                        .size(100.dp, 50.dp)
+                        .clickable {
+                            navController.navigate(NavigationRoutes.VIDEOPLAYER_SCREEN.toString())
+                        },
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -240,14 +242,14 @@ fun DetailScreenUi(animeInfo: AnimeInfo) {
 
             )
 
-            LazyColumn (modifier = Modifier.fillMaxWidth().height(400.dp)){
-                items(animeInfo.episodes){
-                    ep->
-                    Box(modifier = Modifier.fillMaxWidth().height(100.dp).background(color = Color.Red)){
-                        Text(text = ep.id, fontSize = 25.sp)
-                    }
-                }
-            }
+//            LazyColumn (modifier = Modifier.fillMaxWidth().height(400.dp)){
+//                items(animeInfo.episodes){
+//                    ep->
+//                    Box(modifier = Modifier.fillMaxWidth().height(100.dp).background(color = Color.Red)){
+//                        Text(text = ep.id, fontSize = 25.sp)
+//                    }
+//                }
+//            }
         }
     }
 }
