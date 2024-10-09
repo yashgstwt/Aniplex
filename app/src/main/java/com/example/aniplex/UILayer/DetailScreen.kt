@@ -4,28 +4,18 @@ import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.displayCutoutPadding
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -51,7 +41,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.GenericFontFamily
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -77,7 +66,7 @@ fun DetailScreen(viewModal: AniplexViewModal, navController: NavHostController, 
         is GetAnimeInfo.Success -> {
             Log.d("DetailScreen"," ${ (viewModal.AnimeInfo as GetAnimeInfo.Success).animeInfo }")
             var animeInfo:AnimeInfo =  (viewModal.AnimeInfo as GetAnimeInfo.Success).animeInfo
-            viewModal.streamingEpisodes = animeInfo.episodes
+            viewModal.AnimeEpisodesIDs = animeInfo.episodes
             DetailScreenUi(animeInfo, navController)
         }
 
@@ -191,7 +180,7 @@ fun DetailScreenUi(animeInfo: AnimeInfo, navController: NavHostController) {
                 ) {
                     Icon(
                         imageVector = Icons.Filled.Favorite,
-                        contentDescription = "play",
+                        contentDescription = "fav",
                         modifier = Modifier.fillMaxSize(.8f),
                         tint = favColor
                     )
@@ -241,15 +230,6 @@ fun DetailScreenUi(animeInfo: AnimeInfo, navController: NavHostController) {
                 )
 
             )
-
-//            LazyColumn (modifier = Modifier.fillMaxWidth().height(400.dp)){
-//                items(animeInfo.episodes){
-//                    ep->
-//                    Box(modifier = Modifier.fillMaxWidth().height(100.dp).background(color = Color.Red)){
-//                        Text(text = ep.id, fontSize = 25.sp)
-//                    }
-//                }
-//            }
         }
     }
 }
