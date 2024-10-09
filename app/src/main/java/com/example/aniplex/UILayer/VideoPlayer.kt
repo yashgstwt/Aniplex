@@ -14,15 +14,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -34,9 +33,11 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
@@ -44,28 +45,67 @@ import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.hls.HlsMediaSource
 import androidx.media3.ui.PlayerView
+import com.example.aniplex.DataLayer.Source
 import com.example.aniplex.ViewModal.AniplexViewModal
+import com.example.aniplex.ViewModal.GetStreamingData
 import com.example.aniplex.ui.theme.black
 import com.example.aniplex.ui.theme.gradiantColor
 import com.google.accompanist.systemuicontroller.SystemUiController
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.update
+import okhttp3.internal.wait
 
 
 @OptIn(UnstableApi::class)
 @Composable
 fun VideoPlayer(viewModal: AniplexViewModal) {
-    var currentEpPlaying by remember { mutableStateOf(viewModal.streamingEpisodes[0].url) }
+    var currentEpPlaying by remember { mutableStateOf(viewModal.AnimeEpisodesIDs[0].id) }
+    var URL by remember { mutableStateOf(viewModal.playQuality[0].url) }
+
     Log.d("Streaming" ,"hayyyyyy" +currentEpPlaying)
+    // method to get streaming link from episode id  i.e from currentEpPlaying
+    viewModal.getStreamingLink( currentEpPlaying , viewModal.playbackServer)
+
+    LaunchedEffect(viewModal.StreamingLink) {
+    when(viewModal.StreamingLink){
+        is GetStreamingData.Error ->  Log.d("Streaming" , (viewModal.StreamingLink as GetStreamingData.Error).message.toString())
+        is GetStreamingData.Loading -> Log.d("Streaming" , "Loading")
+        is GetStreamingData.Success -> {
+            viewModal.playQuality=
+                (viewModal.StreamingLink as GetStreamingData.Success).streamingData.sources
+            URL = viewModal.playQuality[0].url
+
+            Log.d("Streaming" ,  viewModal.playQuality.toString())
+        }
+    }
+}
+
+
     // Get the current context
     val context = LocalContext.current
 
-    // Initialize ExoPlayer
-    val exoPlayer = ExoPlayer.Builder(context).build()
 
-    val hlsDataSourceFactory = DefaultHttpDataSource.Factory()
-    val uri = Uri.Builder().encodedPath(currentEpPlaying).build()
-    val hlsMediaItem = MediaItem.Builder().setUri(uri).build()
-    val mediaSource = remember { HlsMediaSource.Factory(hlsDataSourceFactory).createMediaSource(hlsMediaItem) }
+
+
+
+    // Initialize ExoPlayer
+    val exoPlayer = remember { ExoPlayer.Builder(context).build() }
+
+    LaunchedEffect (URL){
+        if(!URL.isEmpty()) {
+            val hlsDataSourceFactory = DefaultHttpDataSource.Factory()
+            val uri = Uri.Builder().encodedPath(URL).build() // streaming url
+            val hlsMediaItem = MediaItem.Builder().setUri(uri).build()
+            val mediaSource =
+                HlsMediaSource.Factory(hlsDataSourceFactory).createMediaSource(hlsMediaItem)
+            exoPlayer.setMediaSource(mediaSource)
+            exoPlayer.prepare()
+        }
+    }
+
 
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
@@ -91,8 +131,7 @@ fun VideoPlayer(viewModal: AniplexViewModal) {
     }
 
 
-    exoPlayer.setMediaSource(mediaSource)
-    exoPlayer.prepare()
+
 
 
     // Manage lifecycle events
@@ -126,35 +165,77 @@ fun VideoPlayer(viewModal: AniplexViewModal) {
 
         Text("Quality" , modifier = Modifier
             .fillMaxWidth()
-            .padding(10.dp), fontSize = 20.sp)
+            .padding(10.dp),
+            fontSize = 20.sp,
+            color = Color.White
+        )
+
         LazyRow(modifier = Modifier
             .fillMaxWidth()
-            .height(30.dp)
-            .background(Color.Transparent)) {
-            items(viewModal.streamingEpisodes){
+            .height(35.dp)
+            .background(Color.Transparent)
+        ) {
+            items(viewModal.playQuality){
                 ep->
                 Box(
                     modifier = Modifier
                         .padding(10.dp)
-                        .clip(RoundedCornerShape(25.dp))
+                        .clip(RoundedCornerShape(35.dp))
                         .border(
                             1.dp,
                             color = Color.White,
                             shape = RoundedCornerShape(25.dp)
                         )
-                        .height(height = 25.dp)
+                        .height(height = 35.dp)
                         .background(Color.Gray)
                         .clickable {
-                            currentEpPlaying = ep.id
+                            URL = ep.url
+                            Log.d("Streaming", URL)
                         },
+
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(ep.number.toString(), modifier = Modifier.padding(start = 5.dp , end = 5.dp), fontSize = 10.sp, color = Color.White)
+                    Text(ep.quality, modifier = Modifier.padding(start = 5.dp , end = 5.dp), fontSize = 10.sp, color = Color.White, textAlign = TextAlign.Center)
                 }
 
             }
 
         }
+
+
+
+
+
+//        //Episodes ids
+//        LazyRow(modifier = Modifier
+//            .fillMaxWidth()
+//            .height(30.dp)
+//            .background(Color.Transparent)
+//        ) {
+//            items(viewModal.AnimeEpisodesIDs){
+//                ep->
+//                Box(
+//                    modifier = Modifier
+//                        .padding(10.dp)
+//                        .clip(RoundedCornerShape(25.dp))
+//                        .border(
+//                            1.dp,
+//                            color = Color.White,
+//                            shape = RoundedCornerShape(25.dp)
+//                        )
+//                        .height(height = 25.dp)
+//                        .background(Color.Gray)
+//                        .clickable {
+//                            currentEpPlaying = ep.id
+//                        },
+//                    contentAlignment = Alignment.Center,
+//                ) {
+//                    Text(ep.number.toString(), modifier = Modifier.padding(start = 5.dp , end = 5.dp), fontSize = 10.sp, color = Color.White)
+//                }
+//
+//            }
+//
+//        }
 
 
 //            LazyColumn (modifier = Modifier.fillMaxWidth().height(400.dp)){

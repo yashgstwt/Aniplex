@@ -8,10 +8,13 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.aniplex.DataLayer.Episode
+import com.example.aniplex.DataLayer.Source
 import com.example.aniplex.Repository.AniplexRepo
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import okhttp3.internal.notify
 import okhttp3.internal.wait
 import retrofit2.HttpException
 import javax.inject.Inject
@@ -26,7 +29,7 @@ class AniplexViewModal @Inject constructor( private val repo : AniplexRepo) : Vi
     var topAirings : GetTopAirings by mutableStateOf(GetTopAirings.Loading)
     private set
 
-    var getStreamingLink : GetStreamingData by mutableStateOf(GetStreamingData.Loading)
+    var StreamingLink : GetStreamingData by mutableStateOf(GetStreamingData.Loading)
     private set
 
     var recentEpisodes : GetRecentEpisodes by mutableStateOf(GetRecentEpisodes.Loading)
@@ -34,26 +37,28 @@ class AniplexViewModal @Inject constructor( private val repo : AniplexRepo) : Vi
 
     var search : GetSearch by mutableStateOf(GetSearch.Loading)
 
-    var streamingEpisodes : List<Episode> by mutableStateOf(emptyList<Episode>())
+    var AnimeEpisodesIDs : List<Episode> by mutableStateOf(emptyList<Episode>())
 
+    var playQuality:List<Source> = listOf( Source(false,"",""))
 
+    var playbackServer : String by mutableStateOf("gogocdn")
 
 
     init {
         viewModelScope.launch {
             getRecentEpisode()
 
-             getStreamingLink("yamakoshi-mura-no-mari-to-sanbiki-no-koinu-dub-episode-1","gogocdn")
-            delay(5000 )
+            // getStreamingLink("yamakoshi-mura-no-mari-to-sanbiki-no-koinu-dub-episode-1","gogocdn")
+            //delay(5000 )
 
 
-            Log.d("Stream" , getStreamingLink.toString())
+            Log.d("Stream" , StreamingLink.toString())
         }
     }
 
     fun getStreamingLink(animeId: String, server: String) {
         viewModelScope.launch {
-            getStreamingLink = try {
+            StreamingLink = try {
                 GetStreamingData.Success(repo.getStreamingLink(animeId, server))
             }catch (e:Exception){
                 GetStreamingData.Error(e.toString())
