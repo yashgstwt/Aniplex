@@ -47,12 +47,7 @@ class AniplexViewModal @Inject constructor( private val repo : AniplexRepo) : Vi
     init {
         viewModelScope.launch {
             getRecentEpisode()
-
-            // getStreamingLink("yamakoshi-mura-no-mari-to-sanbiki-no-koinu-dub-episode-1","gogocdn")
-            //delay(5000 )
-
-
-            Log.d("Stream" , StreamingLink.toString())
+           // Log.d("Stream" , StreamingLink.toString())
         }
     }
 
@@ -70,7 +65,6 @@ class AniplexViewModal @Inject constructor( private val repo : AniplexRepo) : Vi
     fun getRecentEpisode(){
         viewModelScope.launch {
             recentEpisodes = try {
-             //   Log.d("API", "************************************${repo.getRecentEpisodes().toString()}")
                 GetRecentEpisodes.Success(repo.getRecentEpisodes(1,2))
             }catch (e:Exception){
                 GetRecentEpisodes.Error(e)
@@ -93,7 +87,6 @@ class AniplexViewModal @Inject constructor( private val repo : AniplexRepo) : Vi
             }catch (e: HttpException){
                 GetAnimeInfo.Error(e)
             }
-           // Log.d("Api" , recentReleased.toString())
         }
     }
 }
