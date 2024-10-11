@@ -1,0 +1,19 @@
+Index: app/src/main/java/com/example/aniplex/DataLayer/StreamingServers.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/example/aniplex/DataLayer/StreamingServers.kt b/app/src/main/java/com/example/aniplex/DataLayer/StreamingServers.kt
+new file mode 100644
+--- /dev/null	(date 1728614039532)
++++ b/app/src/main/java/com/example/aniplex/DataLayer/StreamingServers.kt	(date 1728614039532)
+@@ -0,0 +1,8 @@
++package com.example.aniplex.DataLayer
++
++
++enum class StreamingServers {
++        gogocdn,
++        streamsb,
++        vidstreaming
++    }
+\ No newline at end of file

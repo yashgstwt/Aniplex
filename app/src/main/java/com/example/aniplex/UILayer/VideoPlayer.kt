@@ -9,11 +9,13 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -21,7 +23,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,26 +38,19 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.common.MediaItem
-import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.hls.HlsMediaSource
 import androidx.media3.ui.PlayerView
-import com.example.aniplex.DataLayer.Source
 import com.example.aniplex.ViewModal.AniplexViewModal
 import com.example.aniplex.ViewModal.GetStreamingData
 import com.example.aniplex.ui.theme.black
 import com.example.aniplex.ui.theme.gradiantColor
 import com.google.accompanist.systemuicontroller.SystemUiController
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.update
-import okhttp3.internal.wait
+
 
 
 @OptIn(UnstableApi::class)
@@ -70,18 +64,18 @@ fun VideoPlayer(viewModal: AniplexViewModal) {
     viewModal.getStreamingLink( currentEpPlaying , viewModal.playbackServer)
 
     LaunchedEffect(viewModal.StreamingLink) {
-    when(viewModal.StreamingLink){
-        is GetStreamingData.Error ->  Log.d("Streaming" , (viewModal.StreamingLink as GetStreamingData.Error).message.toString())
-        is GetStreamingData.Loading -> Log.d("Streaming" , "Loading")
-        is GetStreamingData.Success -> {
-            viewModal.playQuality=
-                (viewModal.StreamingLink as GetStreamingData.Success).streamingData.sources
-            URL = viewModal.playQuality[0].url
+            when(viewModal.StreamingLink){
+            is GetStreamingData.Error ->  Log.d("Streaming" , (viewModal.StreamingLink as GetStreamingData.Error).message.toString())
+            is GetStreamingData.Loading -> Log.d("Streaming" , "Loading")
+            is GetStreamingData.Success -> {
+                viewModal.playQuality=
+                    (viewModal.StreamingLink as GetStreamingData.Success).streamingData.sources
+                URL = viewModal.playQuality[0].url
 
-            Log.d("Streaming" ,  viewModal.playQuality.toString())
+                Log.d("Streaming" ,  viewModal.playQuality.toString())
+            }
         }
     }
-}
 
 
     // Get the current context
@@ -147,10 +141,8 @@ fun VideoPlayer(viewModal: AniplexViewModal) {
     var brush: List<Color> = listOf(gradiantColor , black)
     Column(modifier = Modifier
         .fillMaxSize()
-        .background(brush = Brush.verticalGradient(brush))) {
-        if (playerState == Player.STATE_READY) {
-            // Start playback or perform other actions when the player is ready
-        }
+        .background(brush = Brush.verticalGradient(brush))
+    ) {
         AndroidView(
             factory = { ctx ->
                 PlayerView(ctx).apply {
@@ -172,21 +164,21 @@ fun VideoPlayer(viewModal: AniplexViewModal) {
 
         LazyRow(modifier = Modifier
             .fillMaxWidth()
-            .height(35.dp)
-            .background(Color.Transparent)
+            .height(55.dp)
+            .background(Color.Transparent),
+            contentPadding = PaddingValues(10.dp)
         ) {
             items(viewModal.playQuality){
                 ep->
                 Box(
-                    modifier = Modifier
-                        .padding(10.dp)
+                    modifier = Modifier.padding(start = 10.dp, end = 10.dp)
                         .clip(RoundedCornerShape(35.dp))
                         .border(
                             1.dp,
                             color = Color.White,
                             shape = RoundedCornerShape(25.dp)
                         )
-                        .height(height = 35.dp)
+                        .height(height = 55.dp)
                         .background(Color.Gray)
                         .clickable {
                             URL = ep.url
@@ -195,7 +187,7 @@ fun VideoPlayer(viewModal: AniplexViewModal) {
 
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(ep.quality, modifier = Modifier.padding(start = 5.dp , end = 5.dp), fontSize = 10.sp, color = Color.White, textAlign = TextAlign.Center)
+                    Text(ep.quality, modifier = Modifier.padding(start = 5.dp , end=5.dp), fontSize = 20.sp, color = Color.White, textAlign = TextAlign.Center,)
                 }
 
             }
@@ -204,52 +196,45 @@ fun VideoPlayer(viewModal: AniplexViewModal) {
 
 
 
+        Text("Episodes" , modifier = Modifier
+            .fillMaxWidth()
+            .padding(10.dp),
+            fontSize = 20.sp,
+            color = Color.White
+        )
 
+        //Episodes ids
 
-//        //Episodes ids
-//        LazyRow(modifier = Modifier
-//            .fillMaxWidth()
-//            .height(30.dp)
-//            .background(Color.Transparent)
-//        ) {
-//            items(viewModal.AnimeEpisodesIDs){
-//                ep->
-//                Box(
-//                    modifier = Modifier
-//                        .padding(10.dp)
-//                        .clip(RoundedCornerShape(25.dp))
-//                        .border(
-//                            1.dp,
-//                            color = Color.White,
-//                            shape = RoundedCornerShape(25.dp)
-//                        )
-//                        .height(height = 25.dp)
-//                        .background(Color.Gray)
-//                        .clickable {
-//                            currentEpPlaying = ep.id
-//                        },
-//                    contentAlignment = Alignment.Center,
-//                ) {
-//                    Text(ep.number.toString(), modifier = Modifier.padding(start = 5.dp , end = 5.dp), fontSize = 10.sp, color = Color.White)
-//                }
-//
-//            }
-//
-//        }
+        LazyColumn(modifier = Modifier.fillMaxWidth()
+            .background(Color.Transparent)
+        ) {
+            items(viewModal.AnimeEpisodesIDs){
+                    ep->
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(10.dp)
+                        .clip(RoundedCornerShape(25.dp))
+                        .border(
+                            1.dp,
+                            color = Color.White,
+                            shape = RoundedCornerShape(25.dp)
+                        )
+                        .height(height = 30.dp)
+                        .background(Color.Gray)
+                        .clickable {
+                            currentEpPlaying = ep.id
+                        },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text("Episode "+ ep.number.toString(), modifier = Modifier.padding(start = 5.dp , end = 5.dp), fontSize = 10.sp, color = Color.White, textAlign = TextAlign.Center)
+                }
 
+            }
 
-//            LazyColumn (modifier = Modifier.fillMaxWidth().height(400.dp)){
-//                items(5){
-//                    ep->
-//                    Box(modifier = Modifier.fillMaxWidth().height(100.dp).background(color = Color.Red)){
-//                        Text(text = ep.toString() , fontSize = 25.sp)
-//                    }
-//                }
-//            }
+        }
 
     }
-
-
 }
 
 
