@@ -13,20 +13,20 @@ import retrofit2.http.Query
 
 interface ApiEndPoints {
 
-    @GET("{animeName}?page={page}")
+    @GET("{animeName}?page={page}") //todo
     suspend fun Search(
         @Path("animeName") animeName : String,
         @Path("page") page : Int = 1
     ): Search
 
     @GET("recent-episodes")
-    suspend fun getRecentEpisodes(
+    suspend fun getRecentEpisodes( //done
         @Query("page") page: Int = 1,
         @Query("type") type : Int = 2
     ): RecentEpisodes
 
     @GET("top-airing")
-    suspend fun getTopAirings(
+    suspend fun getTopAirings( //todo
         @Query("page") page:Int = 1
     ):TopAiring
 

@@ -81,10 +81,6 @@ fun VideoPlayer(viewModal: AniplexViewModal) {
     // Get the current context
     val context = LocalContext.current
 
-
-
-
-
     // Initialize ExoPlayer
     val exoPlayer = remember { ExoPlayer.Builder(context).build() }
 

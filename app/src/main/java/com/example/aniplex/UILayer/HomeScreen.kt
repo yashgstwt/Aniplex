@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package com.example.aniplex.UILayer
 
 
@@ -13,7 +15,7 @@ import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.displayCutoutPadding
 import androidx.compose.foundation.layout.fillMaxSize
@@ -26,8 +28,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -48,18 +56,28 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.example.aniplex.DataLayer.Result
+import com.example.aniplex.DataLayer.ResultX
 import com.example.aniplex.Navigation.NavigationRoutes
 import com.example.aniplex.R
 import com.example.aniplex.ViewModal.AniplexViewModal
 import com.example.aniplex.ViewModal.GetRecentEpisodes
+import com.example.aniplex.ViewModal.GetTopAirings
 import com.example.aniplex.ui.theme.black
 import com.example.aniplex.ui.theme.gradiantColor
-import javax.inject.Singleton
 
-data class  selectedAnimeId (var id : String)
 
 @Composable
 fun HomeScreen(AniplexViewModal: AniplexViewModal, navController: NavHostController) {
+
+
+    LaunchedEffect(AniplexViewModal.topAiringsPage) {
+        var topAirings = AniplexViewModal.getTopAirings(AniplexViewModal.topAiringsPage)
+        Log.d("topairings", "HomeScreen: ${AniplexViewModal.topAiringsPage}")
+        Log.d("topairings", ": ${AniplexViewModal.topAirings}")
+
+
+    }
+
 
     Log.d("LOG","HomeScreen............................................................................")
     var brush: List<Color> = listOf(gradiantColor , black)
@@ -80,20 +98,20 @@ fun HomeScreen(AniplexViewModal: AniplexViewModal, navController: NavHostControl
         .fillMaxSize()
         .background(brush = Brush.verticalGradient(brush))
         .verticalScroll(scrollState)
-        .padding(10.dp)
+        .padding(top = 10.dp , start=10.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-
         ) {
             Spacer(modifier= Modifier.displayCutoutPadding())
-            Box(modifier = Modifier.fillMaxWidth().border(2.dp, color = Color.White, shape = RoundedCornerShape(25.dp))){
+            Box(modifier = Modifier.fillMaxWidth().padding(end=10.dp).border(2.dp, color = Color.White, shape = RoundedCornerShape(25.dp))){
                 Image(painter = painterResource(R.drawable.mochuro) ,
                     contentDescription = "cover image " ,
                     modifier = Modifier.padding(start = 10.dp)
                         .size(70.dp)
-                        .align(Alignment.BottomStart) ,
+                        .align(Alignment.BottomStart)
+                        .clip(RoundedCornerShape(bottomStart = 25.dp)) ,
                     contentScale = ContentScale.Crop)
                 Text(
                     text = "Aniplex",
@@ -117,7 +135,7 @@ fun HomeScreen(AniplexViewModal: AniplexViewModal, navController: NavHostControl
             Box(
                 modifier = Modifier
                     .shadow(55.dp, shape = RoundedCornerShape(25.dp), spotColor = Color.Blue)
-                    .padding(top = 10.dp)
+                    .padding(top = 10.dp, end = 10.dp)
                     .fillMaxWidth()
                     .height(200.dp)
                     .border(2.dp, color = Color.White, shape = RoundedCornerShape(25.dp))
@@ -174,7 +192,7 @@ fun HomeScreen(AniplexViewModal: AniplexViewModal, navController: NavHostControl
                     }
 
                     is GetRecentEpisodes.Error -> {
-                        ErrorScreen()
+                        ErrorScreen((AniplexViewModal.recentEpisodes as GetRecentEpisodes.Error).error.toString())
                     }
 
                     is GetRecentEpisodes.Loading -> {
@@ -182,8 +200,48 @@ fun HomeScreen(AniplexViewModal: AniplexViewModal, navController: NavHostControl
                     }
                 }
             }
-            Text(" Popular ", fontSize = 25.sp , fontFamily = FontFamily.Serif , color = Color.White , modifier = Modifier.padding(bottom = 10.dp))
-            AnimeCard()
+            Row (modifier = Modifier.fillMaxWidth().padding(top=20.dp).height(50.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween){
+                Text(" TopAirings ", fontSize = 25.sp , fontFamily = FontFamily.Serif , color = Color.White )
+                Row (modifier= Modifier.height(50.dp) , horizontalArrangement = Arrangement.End){
+
+                    Icon(imageVector = Icons.Filled.ArrowBack,
+                        contentDescription = "arrow",
+                        modifier = Modifier.clickable{
+                            //if (AniplexViewModal.topAiringsPage > 0)
+                                AniplexViewModal.topAiringsPage--
+                            Log.d("topairings", "HomeScreen: ${AniplexViewModal.topAiringsPage}")
+
+                        }.size(35.dp).align(Alignment.CenterVertically),
+                        tint = Color.White
+                    )
+                    Icon(imageVector = Icons.Filled.ArrowForward,
+                        contentDescription = "arrow",
+                        modifier = Modifier.clickable {
+                            AniplexViewModal.topAiringsPage++
+                            Log.d("topairings", "HomeScreen: ${AniplexViewModal.topAiringsPage}")
+
+                        }.size(35.dp).align(Alignment.CenterVertically),
+                        tint = Color.White
+                    )
+                }
+
+            }
+
+
+            Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.CenterStart ,){
+
+                when(AniplexViewModal.topAirings){
+                    is GetTopAirings.Error -> ErrorScreen((AniplexViewModal.topAirings as GetTopAirings.Error).message)
+                    GetTopAirings.Loading -> Loading()
+                    is GetTopAirings.Success -> {
+                        LazyRow(modifier = Modifier.matchParentSize(), verticalAlignment = Alignment.CenterVertically , horizontalArrangement = Arrangement.Center) {
+                            items((AniplexViewModal.topAirings as GetTopAirings.Success).airings.results){
+                                AnimeCard(it)
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -198,7 +256,6 @@ fun NewAnimeCard(data: Result , OnClick : (id:String) -> Unit = {} ){
             .clip(RoundedCornerShape(25.dp))
             .size(140.dp, 200.dp)
             .clickable {
-               // SelectedAinmeId.id = data.id
                 OnClick(data.id)
 
             },
@@ -238,19 +295,22 @@ fun NewAnimeCard(data: Result , OnClick : (id:String) -> Unit = {} ){
 
 
 @Composable
-fun AnimeCard (){
+fun AnimeCard(result: ResultX) {
     Box(
-        modifier = Modifier
+        modifier = Modifier.padding(5.dp)
             .border(width = 2.dp, color = Color.White, shape = RoundedCornerShape(25.dp))
             .clip(RoundedCornerShape(25.dp))
-            .size(140.dp, 200.dp),
+            .size(140.dp, 200.dp)
+
     ){
-        Image(
-            painter = painterResource(R.drawable.naruto) ,
-            contentDescription = "naruto img ",
+
+        AsyncImage(model = result.image ,
+            contentDescription = result.title ,
+            alignment = Alignment.BottomStart ,
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop
         )
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -258,7 +318,7 @@ fun AnimeCard (){
             verticalArrangement = Arrangement.Bottom ,
             horizontalAlignment =  Alignment.CenterHorizontally,
             ){
-            Text( text = "Naruto  " ,
+            Text( text = result.title ,
                 modifier = Modifier
                     .padding(bottom = 2.dp)
                     .fillMaxWidth(),
