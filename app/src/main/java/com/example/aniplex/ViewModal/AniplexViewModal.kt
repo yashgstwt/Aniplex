@@ -11,6 +11,7 @@ import com.example.aniplex.DataLayer.Episode
 import com.example.aniplex.DataLayer.Source
 import com.example.aniplex.Repository.AniplexRepo
 import dagger.hilt.android.lifecycle.HiltViewModel
+import hilt_aggregated_deps._com_example_aniplex_ViewModal_AniplexViewModal_HiltModules_BindsModule
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -43,13 +44,26 @@ class AniplexViewModal @Inject constructor( private val repo : AniplexRepo) : Vi
 
     var playbackServer : String by mutableStateOf("gogocdn")
 
+    var topAiringsPage:Int by mutableStateOf(1)
 
     init {
         viewModelScope.launch {
             getRecentEpisode()
            // Log.d("Stream" , StreamingLink.toString())
+            getTopAirings(topAiringsPage)
         }
     }
+
+    fun getTopAirings(page:Int = 1){
+        viewModelScope.launch {
+            topAirings= try {
+                GetTopAirings.Success(repo.getTopAirings(page))
+            }catch(e:Exception){
+                GetTopAirings.Error(e.toString())
+            }
+        }
+    }
+
 
     fun getStreamingLink(animeId: String, server: String) {
         viewModelScope.launch {

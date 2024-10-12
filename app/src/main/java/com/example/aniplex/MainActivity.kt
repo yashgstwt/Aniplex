@@ -22,7 +22,6 @@ class MainActivity : ComponentActivity() {
                 Navigation( AniplexViewModal)
                 //ExoPlayerView("https://www118.anzeat.pro/streamhls/4bc8df880225830b6077fbccc564a0f4/ep.1.1728066302.360.m3u8")
 
-
             }
         }
     }
