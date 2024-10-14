@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -38,6 +39,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.media3.common.MediaItem
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultHttpDataSource
@@ -59,7 +64,7 @@ fun VideoPlayer(viewModal: AniplexViewModal) {
     var currentEpPlaying by remember { mutableStateOf(viewModal.AnimeEpisodesIDs[0].id) }
     var URL by remember { mutableStateOf(viewModal.playQuality[0].url) }
 
-    Log.d("Streaming" ,"hayyyyyy" +currentEpPlaying)
+   // Log.d("Streaming" ,"hayyyyyy" +currentEpPlaying)
     // method to get streaming link from episode id  i.e from currentEpPlaying
     viewModal.getStreamingLink( currentEpPlaying , viewModal.playbackServer)
 
@@ -100,6 +105,7 @@ fun VideoPlayer(viewModal: AniplexViewModal) {
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
 
+
     var height by remember { mutableStateOf(0.3f) }
     if (isLandscape) {
        height = 1f
@@ -108,30 +114,12 @@ fun VideoPlayer(viewModal: AniplexViewModal) {
     }
     val systemUiController: SystemUiController = rememberSystemUiController()
 
-    LaunchedEffect(key1 = isLandscape) {
-        if (isLandscape) {
-            systemUiController.isStatusBarVisible = false
-            systemUiController.isNavigationBarVisible = false
-            systemUiController.isSystemBarsVisible = false // Optional: Hide both bars at once
-        } else {
-            systemUiController.isStatusBarVisible = true
-            systemUiController.isNavigationBarVisible = true
-            systemUiController.isSystemBarsVisible = true // Optional: Show both bars at once
-        }
-    }
-
-
-
-
-
     // Manage lifecycle events
     DisposableEffect(Unit) {
         onDispose {
             exoPlayer.release()
         }
     }
-    val playerState = exoPlayer.playbackState
-
 
     // Use AndroidView to embed an Android View (PlayerView) into Compose
     var brush: List<Color> = listOf(gradiantColor , black)
@@ -148,7 +136,21 @@ fun VideoPlayer(viewModal: AniplexViewModal) {
             modifier = Modifier
                 .background(Color.Black.copy(alpha = .5f))
                 .fillMaxWidth()
-                .fillMaxHeight(height) // Set your desired height
+                .fillMaxHeight(height)
+                .also {
+                    if (isLandscape) {
+                        systemUiController.isStatusBarVisible = false
+                        systemUiController.isNavigationBarVisible = false
+                        systemUiController.isSystemBarsVisible =
+                            false // Optional: Hide both bars at once
+                    } else {
+                        systemUiController.isStatusBarVisible = true
+                        systemUiController.isNavigationBarVisible = true
+                        systemUiController.isSystemBarsVisible =
+                            true // Optional: Show both bars at once
+                    }
+                }
+                .statusBarsPadding()
         )
 
         Text("Quality" , modifier = Modifier
@@ -167,7 +169,8 @@ fun VideoPlayer(viewModal: AniplexViewModal) {
             items(viewModal.playQuality){
                 ep->
                 Box(
-                    modifier = Modifier.padding(start = 10.dp, end = 10.dp)
+                    modifier = Modifier
+                        .padding(start = 10.dp, end = 10.dp)
                         .clip(RoundedCornerShape(35.dp))
                         .border(
                             1.dp,
@@ -183,7 +186,13 @@ fun VideoPlayer(viewModal: AniplexViewModal) {
 
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(ep.quality, modifier = Modifier.padding(start = 5.dp , end=5.dp), fontSize = 20.sp, color = Color.White, textAlign = TextAlign.Center,)
+                    Text(
+                        ep.quality,
+                        modifier = Modifier.padding(start = 5.dp, end = 5.dp),
+                        fontSize = 20.sp,
+                        color = Color.White,
+                        textAlign = TextAlign.Center
+                    )
                 }
 
             }
@@ -201,22 +210,25 @@ fun VideoPlayer(viewModal: AniplexViewModal) {
 
         //Episodes ids
 
-        LazyColumn(modifier = Modifier.fillMaxWidth()
-            .background(Color.Transparent)
+        LazyColumn(modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(topStart = 25.dp, topEnd = 25.dp))
+            .background(brush = Brush.verticalGradient(listOf(gradiantColor, Color.Transparent)))
+            , contentPadding = PaddingValues(10.dp)
         ) {
             items(viewModal.AnimeEpisodesIDs){
                     ep->
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .height(height = 70.dp)
                         .padding(10.dp)
                         .clip(RoundedCornerShape(25.dp))
                         .border(
-                            1.dp,
+                            width = 1.dp,
                             color = Color.White,
                             shape = RoundedCornerShape(25.dp)
                         )
-                        .height(height = 30.dp)
                         .background(Color.Gray)
                         .clickable {
                             currentEpPlaying = ep.id
@@ -230,6 +242,25 @@ fun VideoPlayer(viewModal: AniplexViewModal) {
 
         }
 
+    }
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    LaunchedEffect(lifecycleOwner) {
+        val lifecycle = lifecycleOwner.lifecycle
+        lifecycle.addObserver(object : LifecycleEventObserver {
+            override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
+                when (event) {
+                    Lifecycle.Event.ON_PAUSE -> {
+                        exoPlayer.pause()
+                    }
+                    Lifecycle.Event.ON_RESUME -> {
+                        exoPlayer.play()
+                    }
+                    else -> {}
+                }
+            }
+        })
     }
 }
 

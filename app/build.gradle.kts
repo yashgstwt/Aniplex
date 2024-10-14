@@ -91,6 +91,8 @@ dependencies {
     implementation(libs.androidx.media3.ui)
     implementation(libs.media3.exoplayer.hls)
 
+     implementation(libs.androidx.palette)
+
 
 
 

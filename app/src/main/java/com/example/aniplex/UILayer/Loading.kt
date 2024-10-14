@@ -38,7 +38,7 @@ fun Loading(modifier: Modifier = Modifier){
         while (true) {
             color.animateTo(
                 targetValue = if (currentColor == Color.Gray) colo else Color.Gray,
-                animationSpec = tween(durationMillis = 2000)
+                animationSpec = tween(durationMillis = 1500)
             )
             currentColor = if (currentColor == Color.Gray) colo else Color.Gray
         }

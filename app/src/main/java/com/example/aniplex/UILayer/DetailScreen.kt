@@ -74,7 +74,7 @@ fun DetailScreen(viewModal: AniplexViewModal, navController: NavHostController, 
             ErrorScreen((viewModal.AnimeInfo as GetAnimeInfo.Error).message.toString())
         }
         is  GetAnimeInfo.Loading -> {
-            Loading()
+            FullLoadingScreen()
         }
     }
 
