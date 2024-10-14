@@ -40,11 +40,12 @@ class AniplexViewModal @Inject constructor( private val repo : AniplexRepo) : Vi
 
     var AnimeEpisodesIDs : List<Episode> by mutableStateOf(emptyList<Episode>())
 
-    var playQuality:List<Source> = listOf( Source(false,"",""))
+    var playQuality:List<Source> = listOf( Source(false,"Loading..",""))
 
     var playbackServer : String by mutableStateOf("gogocdn")
 
     var topAiringsPage:Int by mutableStateOf(1)
+    var recentReleasedPage:Int by mutableStateOf(1)
 
     init {
         viewModelScope.launch {
@@ -76,10 +77,10 @@ class AniplexViewModal @Inject constructor( private val repo : AniplexRepo) : Vi
     }
 
 
-    fun getRecentEpisode(){
+    fun getRecentEpisode(page:Int = 1 , DubSub:Int = 2){
         viewModelScope.launch {
             recentEpisodes = try {
-                GetRecentEpisodes.Success(repo.getRecentEpisodes(1,2))
+                GetRecentEpisodes.Success(repo.getRecentEpisodes(page,DubSub))
             }catch (e:Exception){
                 GetRecentEpisodes.Error(e)
 

@@ -71,11 +71,15 @@ fun HomeScreen(AniplexViewModal: AniplexViewModal, navController: NavHostControl
 
 
     LaunchedEffect(AniplexViewModal.topAiringsPage) {
-        var topAirings = AniplexViewModal.getTopAirings(AniplexViewModal.topAiringsPage)
+        AniplexViewModal.getTopAirings(AniplexViewModal.topAiringsPage)
         Log.d("topairings", "HomeScreen: ${AniplexViewModal.topAiringsPage}")
         Log.d("topairings", ": ${AniplexViewModal.topAirings}")
 
+    }
 
+    LaunchedEffect(AniplexViewModal.recentReleasedPage){
+        AniplexViewModal.getRecentEpisode(page = AniplexViewModal.recentReleasedPage)
+        Log.d("recentReleased", "HomeScreen: ${AniplexViewModal.recentReleasedPage}")
     }
 
 
@@ -168,7 +172,35 @@ fun HomeScreen(AniplexViewModal: AniplexViewModal, navController: NavHostControl
                 }
             }
 
-            Text("Resent Released ", fontSize = 25.sp , fontFamily = FontFamily.Serif , color = Color.White , modifier = Modifier.padding(bottom = 10.dp))
+            Row (modifier = Modifier.fillMaxWidth().padding(top=20.dp).height(50.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween){
+                Text("RecentReleased ", fontSize = 25.sp , fontFamily = FontFamily.Serif , color = Color.White )
+                Row (modifier= Modifier.height(50.dp) , horizontalArrangement = Arrangement.End){
+                    if (AniplexViewModal.recentReleasedPage > 0){
+                    Icon(imageVector = Icons.Filled.ArrowBack,
+                        contentDescription = "BackArrow",
+                        modifier = Modifier.clickable{
+
+                            AniplexViewModal.recentReleasedPage--
+                            Log.d("recentReleased", "HomeScreen: ${AniplexViewModal.recentReleasedPage}")
+
+                        }.size(35.dp).align(Alignment.CenterVertically),
+                        tint = Color.White
+                    )
+                    }
+
+
+                    Icon(imageVector = Icons.Filled.ArrowForward,
+                        contentDescription = "ForwardArrow",
+                        modifier = Modifier.clickable {
+                            AniplexViewModal.recentReleasedPage++
+                            Log.d("topairings", "HomeScreen: ${AniplexViewModal.recentReleasedPage}")
+
+                        }.size(35.dp).align(Alignment.CenterVertically),
+                        tint = Color.White
+                    )
+                }
+
+            }
 
             Box(modifier = Modifier
                 .fillMaxWidth()
@@ -235,8 +267,11 @@ fun HomeScreen(AniplexViewModal: AniplexViewModal, navController: NavHostControl
                     GetTopAirings.Loading -> Loading()
                     is GetTopAirings.Success -> {
                         LazyRow(modifier = Modifier.matchParentSize(), verticalAlignment = Alignment.CenterVertically , horizontalArrangement = Arrangement.Center) {
-                            items((AniplexViewModal.topAirings as GetTopAirings.Success).airings.results){
-                                AnimeCard(it)
+                            items((AniplexViewModal.topAirings as GetTopAirings.Success).airings.results){ DATA->
+
+                                AnimeCard(DATA){ id->
+                                    navController.navigate(NavigationRoutes.DETAIL_SCREEN.toString()+"/$id")
+                                }
                             }
                         }
                     }
@@ -295,12 +330,14 @@ fun NewAnimeCard(data: Result , OnClick : (id:String) -> Unit = {} ){
 
 
 @Composable
-fun AnimeCard(result: ResultX) {
+fun AnimeCard(result: ResultX , OnClick : (id:String) -> Unit = {}) {
     Box(
         modifier = Modifier.padding(5.dp)
             .border(width = 2.dp, color = Color.White, shape = RoundedCornerShape(25.dp))
             .clip(RoundedCornerShape(25.dp))
-            .size(140.dp, 200.dp)
+            .size(140.dp, 200.dp).clickable {
+                OnClick(result.id)
+            }
 
     ){
 
@@ -314,8 +351,8 @@ fun AnimeCard(result: ResultX) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(brush = Brush.verticalGradient(listOf(Color.Transparent, Color.Black))),
-            verticalArrangement = Arrangement.Bottom ,
+//                  .background(brush = Brush.verticalGradient(listOf(Color.Transparent, Color.Black))),
+            ,verticalArrangement = Arrangement.Bottom ,
             horizontalAlignment =  Alignment.CenterHorizontally,
             ){
             Text( text = result.title ,

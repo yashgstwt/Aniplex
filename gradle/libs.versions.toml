@@ -16,6 +16,7 @@ composeBom = "2024.09.02"
 lottieCompose = "6.4.0"
 media3Exoplayer = "1.4.1"
 media3ExoplayerHls = "1.4.1"
+palette = "1.0.0"
 retrofit = "2.11.0"
 coilCompose = "2.6.0"
 navigationCompose = "2.8.2"
@@ -24,6 +25,7 @@ navigationCompose = "2.8.2"
 accompanist-systemuicontroller = { module = "com.google.accompanist:accompanist-systemuicontroller", version.ref = "accompanistSystemuicontroller" }
 androidx-media3-exoplayer = { module = "androidx.media3:media3-exoplayer", version.ref = "media3Exoplayer" }
 androidx-media3-ui = { module = "androidx.media3:media3-ui", version.ref = "media3Exoplayer" }
+androidx-palette = { module = "androidx.palette:palette", version.ref = "palette" }
 coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coilCompose" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 converter-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "converterGson" }
