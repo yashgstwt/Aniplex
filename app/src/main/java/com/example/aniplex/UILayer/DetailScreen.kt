@@ -1,5 +1,6 @@
 package com.example.aniplex.UILayer
 
+import android.graphics.Bitmap
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -44,12 +45,17 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.graphics.drawable.toBitmap
 import androidx.navigation.NavHostController
+import androidx.palette.graphics.Palette
 import coil.compose.AsyncImage
+import coil.compose.AsyncImagePainter
 import com.example.aniplex.DataLayer.AnimeInfo
 import com.example.aniplex.Navigation.NavigationRoutes
 import com.example.aniplex.ViewModal.AniplexViewModal
 import com.example.aniplex.ViewModal.GetAnimeInfo
+import com.example.aniplex.ui.theme.Vibrant
+import com.example.aniplex.ui.theme.VibrantDark
 import com.example.aniplex.ui.theme.black
 import com.example.aniplex.ui.theme.gradiantColor
 
@@ -82,17 +88,23 @@ fun DetailScreen(viewModal: AniplexViewModal, navController: NavHostController, 
 
 @Composable
 fun DetailScreenUi(animeInfo: AnimeInfo, navController: NavHostController) {
-    var brush: List<Color> = listOf(gradiantColor , black)
+    var darkVibrant by remember { mutableStateOf(gradiantColor) }
+    var vibrant by remember { mutableStateOf(Color.LightGray) }
 
-    Log.d("DetailScreen"," ${animeInfo.url}")
-    Box(modifier = Modifier.fillMaxSize().background(brush = Brush.verticalGradient(brush)).verticalScroll(rememberScrollState())
+    var brush: List<Color> = listOf(darkVibrant,black)
+    var imageBitmap by remember { mutableStateOf<Bitmap?>(null) }
+    var palette:Palette? = null
+
+    Box(modifier = Modifier
+        .fillMaxSize()
+        .background(brush = Brush.verticalGradient(brush))
+        .verticalScroll(rememberScrollState())
     ) {
         Column(modifier = Modifier
             .fillMaxSize()
             .padding(10.dp)
             .fillMaxSize()
         ){
-
             Box(
                 modifier = Modifier
                     .size(200.dp, 300.dp)
@@ -112,7 +124,18 @@ fun DetailScreenUi(animeInfo: AnimeInfo, navController: NavHostController) {
                             color = Color.White,
                             shape = RoundedCornerShape(25.dp)
                         ),
-                    contentScale = ContentScale.Crop
+                    contentScale = ContentScale.Crop,
+                    onState = { state ->
+                        if (state is AsyncImagePainter.State.Success) {
+                            imageBitmap = state.result.drawable.toBitmap()
+                            val softwareBitmap = imageBitmap!!.copy(Bitmap.Config.ARGB_8888, false)
+                            palette = Palette.from(softwareBitmap).generate()
+                            darkVibrant = palette?.darkVibrantSwatch?.rgb?.let { Color(it) } ?: gradiantColor
+                            vibrant = palette?.vibrantSwatch?.rgb?.let { Color(it) } ?: Color.LightGray
+                            Vibrant = vibrant
+                            VibrantDark = darkVibrant
+                        }
+                    }
                 )
 
                 Box(
@@ -137,7 +160,8 @@ fun DetailScreenUi(animeInfo: AnimeInfo, navController: NavHostController) {
             AdaptiveText(
                 text = animeInfo.title,
                 fontSize = 35.sp,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
                     .padding(top = 20.dp),
                 color = Color.White,
                 textAlign = TextAlign.Start,
@@ -154,7 +178,7 @@ fun DetailScreenUi(animeInfo: AnimeInfo, navController: NavHostController) {
                 Box(
                     modifier = Modifier
                         .clip(shape = RoundedCornerShape(25.dp))
-                        .background(gradiantColor)
+                        .background(vibrant)
                         .size(100.dp, 50.dp)
                         .clickable {
                             navController.navigate(NavigationRoutes.VIDEOPLAYER_SCREEN.toString())
@@ -174,7 +198,7 @@ fun DetailScreenUi(animeInfo: AnimeInfo, navController: NavHostController) {
                         favColor = if (favColor == Color.Black) Color.Red else Color.Black
                     }
                     .clip(shape = RoundedCornerShape(25.dp))
-                    .background(gradiantColor)
+                    .background(vibrant.copy(.7f))
                     .size(100.dp, 50.dp),
                     contentAlignment = Alignment.Center
                 ) {
@@ -190,7 +214,11 @@ fun DetailScreenUi(animeInfo: AnimeInfo, navController: NavHostController) {
 
             Text("Genera", fontSize = 20.sp, color = Color.White, fontFamily = FontFamily.Serif)
 
-            Row(modifier = Modifier.padding(top = 10.dp).fillMaxWidth().height(50.dp).horizontalScroll(rememberScrollState())) {
+            Row(modifier = Modifier
+                .padding(top = 10.dp)
+                .fillMaxWidth()
+                .height(50.dp)
+                .horizontalScroll(rememberScrollState())) {
                 animeInfo.genres.forEach {
                     Box(
                         modifier = Modifier
@@ -201,9 +229,8 @@ fun DetailScreenUi(animeInfo: AnimeInfo, navController: NavHostController) {
                                 color = Color.White,
                                 shape = RoundedCornerShape(25.dp)
                             )
-                            .height( height = 25.dp)
-                            .background(Color.Gray)
-                            ,
+                            .height(height = 25.dp)
+                            .background(Color.Gray),
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(it, modifier = Modifier.padding(start = 5.dp , end = 5.dp), fontSize = 10.sp, color = Color.White)
@@ -222,12 +249,13 @@ fun DetailScreenUi(animeInfo: AnimeInfo, navController: NavHostController) {
                 color = Color.White,
                 fontSize = 15.sp,
                 fontFamily = FontFamily.Serif,
-                modifier = Modifier.padding(top = 10.dp)
+                modifier = Modifier
+                    .padding(top = 10.dp)
                     .fillMaxWidth()
                     .height(200.dp)
                     .verticalScroll(
                         rememberScrollState()
-                )
+                    )
 
             )
         }
@@ -242,24 +270,12 @@ fun AdaptiveText(
     fontSize: TextUnit,
     color: Color,
     textAlign: TextAlign,
-    fontFamily: GenericFontFamily
+    fontFamily: GenericFontFamily,
 ) {
     SubcomposeLayout(modifier = modifier) { constraints ->
         val placeable = subcompose("text") {
             Text(text, style = TextStyle(fontSize = fontSize , color = color , textAlign = textAlign , fontFamily = fontFamily)) // Initial font size
         }[0].measure(constraints)
-
-        val availableWidth = constraints.maxWidth
-        val textWidth = placeable.width
-
-//        // Adjust font size if text overflows
-//        val fontSize = if (textWidth > availableWidth) {
-//            // Calculate a smaller font size based on the available width
-//            // You might need to experiment with different scaling factors
-//            (fontSize * (availableWidth.toFloat() / textWidth.toFloat()))
-//        } else {
-//            20.sp
-//        }
 
         layout(placeable.width, placeable.height) {
             placeable.placeRelative(0, 0)

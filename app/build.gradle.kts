@@ -91,7 +91,8 @@ dependencies {
     implementation(libs.androidx.media3.ui)
     implementation(libs.media3.exoplayer.hls)
 
-     implementation(libs.androidx.palette)
+    // palette for creating  list od colors from image
+    implementation(libs.androidx.palette)
 
 
 

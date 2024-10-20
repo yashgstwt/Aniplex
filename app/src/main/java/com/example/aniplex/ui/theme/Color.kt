@@ -12,3 +12,11 @@ val Pink40 = Color(0xFF7D5260)
 
 val gradiantColor  =   Color(0xFF6B7777)
 val black  = Color(0xFF000000)
+
+
+var Vibrant = Color(0xFF6B7777)
+var VibrantDark = Color(0xFF5E8A8A)
+var VibrantLight = Color
+var Muted = Color
+var MutedDark = Color
+var MutedLight = Color

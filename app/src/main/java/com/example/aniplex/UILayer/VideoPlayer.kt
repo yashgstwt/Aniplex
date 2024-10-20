@@ -54,6 +54,8 @@ import androidx.media3.exoplayer.hls.HlsMediaSource
 import androidx.media3.ui.PlayerView
 import com.example.aniplex.ViewModal.AniplexViewModal
 import com.example.aniplex.ViewModal.GetStreamingData
+import com.example.aniplex.ui.theme.Vibrant
+import com.example.aniplex.ui.theme.VibrantDark
 import com.example.aniplex.ui.theme.black
 import com.example.aniplex.ui.theme.gradiantColor
 import com.google.accompanist.systemuicontroller.SystemUiController
@@ -126,7 +128,7 @@ fun VideoPlayer(viewModal: AniplexViewModal) {
     }
 
     // Use AndroidView to embed an Android View (PlayerView) into Compose
-    val brush: List<Color> = listOf(gradiantColor , black)
+    val brush: List<Color> = listOf(VibrantDark , black)
     Column(modifier = Modifier
         .fillMaxSize()
         .background(brush = Brush.verticalGradient(brush))
@@ -227,7 +229,7 @@ fun VideoPlayer(viewModal: AniplexViewModal) {
         LazyColumn(modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(topStart = 25.dp, topEnd = 25.dp))
-            .background(brush = Brush.verticalGradient(listOf(gradiantColor, Color.Transparent)))
+            .background(brush = Brush.verticalGradient(listOf(Vibrant.copy(.5f), Color.Transparent)))
             , contentPadding = PaddingValues(10.dp)
         ) {
             items(viewModal.AnimeEpisodesIDs){
@@ -243,7 +245,7 @@ fun VideoPlayer(viewModal: AniplexViewModal) {
                             color = Color.White,
                             shape = RoundedCornerShape(25.dp)
                         )
-                        .background(Color.Gray)
+                        .background(Vibrant)
                         .clickable {
                             currentEpPlaying = ep.id
                         },

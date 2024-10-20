@@ -72,18 +72,18 @@ fun HomeScreen(AniplexViewModal: AniplexViewModal, navController: NavHostControl
 
     LaunchedEffect(AniplexViewModal.topAiringsPage) {
         AniplexViewModal.getTopAirings(AniplexViewModal.topAiringsPage)
-        Log.d("topairings", "HomeScreen: ${AniplexViewModal.topAiringsPage}")
-        Log.d("topairings", ": ${AniplexViewModal.topAirings}")
+       // Log.d("topairings", "HomeScreen: ${AniplexViewModal.topAiringsPage}")
+       // Log.d("topairings", ": ${AniplexViewModal.topAirings}")
 
     }
 
     LaunchedEffect(AniplexViewModal.recentReleasedPage){
         AniplexViewModal.getRecentEpisode(page = AniplexViewModal.recentReleasedPage)
-        Log.d("recentReleased", "HomeScreen: ${AniplexViewModal.recentReleasedPage}")
+      //  Log.d("recentReleased", "HomeScreen: ${AniplexViewModal.recentReleasedPage}")
     }
 
 
-    Log.d("LOG","HomeScreen............................................................................")
+    //Log.d("LOG","HomeScreen............................................................................")
     var brush: List<Color> = listOf(gradiantColor , black)
 
     val trendingPageList: List<Int> = listOf(
@@ -181,7 +181,7 @@ fun HomeScreen(AniplexViewModal: AniplexViewModal, navController: NavHostControl
                         modifier = Modifier.clickable{
 
                             AniplexViewModal.recentReleasedPage--
-                            Log.d("recentReleased", "HomeScreen: ${AniplexViewModal.recentReleasedPage}")
+                            //Log.d("recentReleased", "HomeScreen: ${AniplexViewModal.recentReleasedPage}")
 
                         }.size(35.dp).align(Alignment.CenterVertically),
                         tint = Color.White
@@ -193,7 +193,7 @@ fun HomeScreen(AniplexViewModal: AniplexViewModal, navController: NavHostControl
                         contentDescription = "ForwardArrow",
                         modifier = Modifier.clickable {
                             AniplexViewModal.recentReleasedPage++
-                            Log.d("topairings", "HomeScreen: ${AniplexViewModal.recentReleasedPage}")
+                            //Log.d("topairings", "HomeScreen: ${AniplexViewModal.recentReleasedPage}")
 
                         }.size(35.dp).align(Alignment.CenterVertically),
                         tint = Color.White
@@ -351,7 +351,6 @@ fun AnimeCard(result: ResultX , OnClick : (id:String) -> Unit = {}) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-//                  .background(brush = Brush.verticalGradient(listOf(Color.Transparent, Color.Black))),
             ,verticalArrangement = Arrangement.Bottom ,
             horizontalAlignment =  Alignment.CenterHorizontally,
             ){
