@@ -16,10 +16,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -89,6 +92,7 @@ fun VideoPlayer(viewModal: AniplexViewModal) {
     // Initialize ExoPlayer
     val exoPlayer = remember { ExoPlayer.Builder(context).build() }
 
+
     LaunchedEffect (URL){
         if(!URL.isEmpty()) {
             val hlsDataSourceFactory = DefaultHttpDataSource.Factory()
@@ -122,12 +126,20 @@ fun VideoPlayer(viewModal: AniplexViewModal) {
     }
 
     // Use AndroidView to embed an Android View (PlayerView) into Compose
-    var brush: List<Color> = listOf(gradiantColor , black)
+    val brush: List<Color> = listOf(gradiantColor , black)
     Column(modifier = Modifier
         .fillMaxSize()
         .background(brush = Brush.verticalGradient(brush))
     ) {
-        AndroidView(
+        if (exoPlayer.playbackState != ExoPlayer.STATE_READY){
+            CircularProgressIndicator(modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(height)
+                .wrapContentHeight(Alignment.CenterVertically)
+                .wrapContentWidth(Alignment.CenterHorizontally)
+            )
+        }else{
+            AndroidView(
             factory = { ctx ->
                 PlayerView(ctx).apply {
                     player = exoPlayer
@@ -149,9 +161,11 @@ fun VideoPlayer(viewModal: AniplexViewModal) {
                         systemUiController.isSystemBarsVisible =
                             true // Optional: Show both bars at once
                     }
+
                 }
                 .statusBarsPadding()
-        )
+            )
+        }
 
         Text("Quality" , modifier = Modifier
             .fillMaxWidth()

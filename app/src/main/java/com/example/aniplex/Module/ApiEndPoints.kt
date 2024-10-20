@@ -7,10 +7,11 @@ import com.example.aniplex.DataLayer.Search
 import com.example.aniplex.DataLayer.StreamingData
 import com.example.aniplex.DataLayer.TopAiring
 import retrofit2.http.GET
+import retrofit2.http.Headers
 import retrofit2.http.Path
 import retrofit2.http.Query
 
-
+const val token = "NWjmNV0InhZPWUgejQlRvvND"
 interface ApiEndPoints {
 
     @GET("{animeName}?page={page}") //todo

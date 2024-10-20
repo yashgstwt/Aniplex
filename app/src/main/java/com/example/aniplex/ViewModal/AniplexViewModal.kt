@@ -12,6 +12,7 @@ import com.example.aniplex.DataLayer.Source
 import com.example.aniplex.Repository.AniplexRepo
 import dagger.hilt.android.lifecycle.HiltViewModel
 import hilt_aggregated_deps._com_example_aniplex_ViewModal_AniplexViewModal_HiltModules_BindsModule
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -36,6 +37,7 @@ class AniplexViewModal @Inject constructor( private val repo : AniplexRepo) : Vi
     var recentEpisodes : GetRecentEpisodes by mutableStateOf(GetRecentEpisodes.Loading)
     private set
 
+
     var search : GetSearch by mutableStateOf(GetSearch.Loading)
 
     var AnimeEpisodesIDs : List<Episode> by mutableStateOf(emptyList<Episode>())
@@ -50,7 +52,8 @@ class AniplexViewModal @Inject constructor( private val repo : AniplexRepo) : Vi
     init {
         viewModelScope.launch {
             getRecentEpisode()
-           // Log.d("Stream" , StreamingLink.toString())
+            delay(5000)
+            Log.d("Stream" , recentEpisodes.toString())
             getTopAirings(topAiringsPage)
         }
     }
