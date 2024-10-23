@@ -52,12 +52,16 @@ import coil.compose.AsyncImage
 import coil.compose.AsyncImagePainter
 import com.example.aniplex.DataLayer.AnimeInfo
 import com.example.aniplex.Navigation.NavigationRoutes
+import com.example.aniplex.RoomDb.Favourite
 import com.example.aniplex.ViewModal.AniplexViewModal
 import com.example.aniplex.ViewModal.GetAnimeInfo
 import com.example.aniplex.ui.theme.Vibrant
 import com.example.aniplex.ui.theme.VibrantDark
 import com.example.aniplex.ui.theme.black
 import com.example.aniplex.ui.theme.gradiantColor
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 
 @Composable
@@ -73,7 +77,7 @@ fun DetailScreen(viewModal: AniplexViewModal, navController: NavHostController, 
             Log.d("DetailScreen"," ${ (viewModal.AnimeInfo as GetAnimeInfo.Success).animeInfo }")
             var animeInfo:AnimeInfo =  (viewModal.AnimeInfo as GetAnimeInfo.Success).animeInfo
             viewModal.AnimeEpisodesIDs = animeInfo.episodes
-            DetailScreenUi(animeInfo, navController)
+            DetailScreenUi(animeInfo, navController, viewModal)
         }
 
         is GetAnimeInfo.Error -> {
@@ -87,7 +91,11 @@ fun DetailScreen(viewModal: AniplexViewModal, navController: NavHostController, 
 }
 
 @Composable
-fun DetailScreenUi(animeInfo: AnimeInfo, navController: NavHostController) {
+fun DetailScreenUi(
+    animeInfo: AnimeInfo,
+    navController: NavHostController,
+    viewModal: AniplexViewModal
+) {
     var darkVibrant by remember { mutableStateOf(gradiantColor) }
     var vibrant by remember { mutableStateOf(Color.LightGray) }
 
@@ -193,9 +201,20 @@ fun DetailScreenUi(animeInfo: AnimeInfo, navController: NavHostController) {
                 }
 
                 var favColor by remember { mutableStateOf(Color.Black) }
+                var isClicked by remember { mutableStateOf(false) }
                 Box(modifier = Modifier
                     .clickable {
-                        favColor = if (favColor == Color.Black) Color.Red else Color.Black
+                        isClicked = !isClicked
+                       if (isClicked) {
+                           favColor = Color.Red
+
+                               viewModal.insertFav(animeInfo.id,animeInfo.title,animeInfo.image,animeInfo.subOrDub)
+
+                        } else {
+                           favColor = Color.Black
+                               viewModal.DeleteFav(animeInfo.id)
+                        }
+
                     }
                     .clip(shape = RoundedCornerShape(25.dp))
                     .background(vibrant.copy(.7f))
@@ -213,7 +232,6 @@ fun DetailScreenUi(animeInfo: AnimeInfo, navController: NavHostController) {
             }
 
             Text("Genera", fontSize = 20.sp, color = Color.White, fontFamily = FontFamily.Serif)
-
             Row(modifier = Modifier
                 .padding(top = 10.dp)
                 .fillMaxWidth()
@@ -230,7 +248,7 @@ fun DetailScreenUi(animeInfo: AnimeInfo, navController: NavHostController) {
                                 shape = RoundedCornerShape(25.dp)
                             )
                             .height(height = 25.dp)
-                            .background(Color.Gray),
+                            .background(Vibrant.copy(.5f)),
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(it, modifier = Modifier.padding(start = 5.dp , end = 5.dp), fontSize = 10.sp, color = Color.White)

@@ -10,20 +10,17 @@ import androidx.lifecycle.viewModelScope
 import com.example.aniplex.DataLayer.Episode
 import com.example.aniplex.DataLayer.Source
 import com.example.aniplex.Repository.AniplexRepo
+import com.example.aniplex.Repository.RoomDBRepo
+import com.example.aniplex.RoomDb.Favourite
 import dagger.hilt.android.lifecycle.HiltViewModel
-import hilt_aggregated_deps._com_example_aniplex_ViewModal_AniplexViewModal_HiltModules_BindsModule
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import okhttp3.internal.notify
-import okhttp3.internal.wait
 import retrofit2.HttpException
 import javax.inject.Inject
 
 
 @HiltViewModel
-class AniplexViewModal @Inject constructor( private val repo : AniplexRepo) : ViewModel() {
+class AniplexViewModal @Inject constructor( private val repo : AniplexRepo ,  val db : RoomDBRepo) : ViewModel() {
 
     var AnimeInfo : GetAnimeInfo by mutableStateOf(GetAnimeInfo.Loading)
 
@@ -105,6 +102,17 @@ class AniplexViewModal @Inject constructor( private val repo : AniplexRepo) : Vi
             }catch (e: HttpException){
                 GetAnimeInfo.Error(e)
             }
+        }
+    }
+
+    fun insertFav(id:String , name:String ,imgUrl :String ,dubOrSub:String ){
+        viewModelScope.launch {
+            db.addFavouriteAnime(id,name,imgUrl,dubOrSub)
+        }
+    }
+    fun DeleteFav(id:String  ){
+        viewModelScope.launch {
+            db.deleteFavAnime(id)
         }
     }
 }

@@ -59,11 +59,16 @@ import com.example.aniplex.DataLayer.Result
 import com.example.aniplex.DataLayer.ResultX
 import com.example.aniplex.Navigation.NavigationRoutes
 import com.example.aniplex.R
+import com.example.aniplex.RoomDb.Favourite
 import com.example.aniplex.ViewModal.AniplexViewModal
 import com.example.aniplex.ViewModal.GetRecentEpisodes
 import com.example.aniplex.ViewModal.GetTopAirings
 import com.example.aniplex.ui.theme.black
 import com.example.aniplex.ui.theme.gradiantColor
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
 
 @Composable
@@ -174,7 +179,7 @@ fun HomeScreen(AniplexViewModal: AniplexViewModal, navController: NavHostControl
 
             Row (modifier = Modifier.fillMaxWidth().padding(top=20.dp).height(50.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween){
                 Text("RecentReleased ", fontSize = 25.sp , fontFamily = FontFamily.Serif , color = Color.White )
-                Row (modifier= Modifier.height(50.dp) , horizontalArrangement = Arrangement.End){
+                Row (modifier= Modifier.height(50.dp).padding(end=20.dp) , horizontalArrangement = Arrangement.End){
                     if (AniplexViewModal.recentReleasedPage > 0){
                     Icon(imageVector = Icons.Filled.ArrowBack,
                         contentDescription = "BackArrow",
@@ -183,19 +188,18 @@ fun HomeScreen(AniplexViewModal: AniplexViewModal, navController: NavHostControl
                             AniplexViewModal.recentReleasedPage--
                             //Log.d("recentReleased", "HomeScreen: ${AniplexViewModal.recentReleasedPage}")
 
-                        }.size(35.dp).align(Alignment.CenterVertically),
+                        }.size(35.dp).align(Alignment.CenterVertically).clip(RoundedCornerShape(25.dp)).background(Color.LightGray),
                         tint = Color.White
                     )
                     }
-
-
+                    Spacer(modifier = Modifier.size(40.dp))
                     Icon(imageVector = Icons.Filled.ArrowForward,
                         contentDescription = "ForwardArrow",
                         modifier = Modifier.clickable {
                             AniplexViewModal.recentReleasedPage++
                             //Log.d("topairings", "HomeScreen: ${AniplexViewModal.recentReleasedPage}")
 
-                        }.size(35.dp).align(Alignment.CenterVertically),
+                        }.size(35.dp).align(Alignment.CenterVertically).clip(RoundedCornerShape(25.dp)).background(Color.LightGray),
                         tint = Color.White
                     )
                 }
@@ -234,34 +238,33 @@ fun HomeScreen(AniplexViewModal: AniplexViewModal, navController: NavHostControl
             }
             Row (modifier = Modifier.fillMaxWidth().padding(top=20.dp).height(50.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween){
                 Text(" TopAirings ", fontSize = 25.sp , fontFamily = FontFamily.Serif , color = Color.White )
-                Row (modifier= Modifier.height(50.dp) , horizontalArrangement = Arrangement.End){
+                Row (modifier= Modifier.height(50.dp).padding(end= 20.dp) , horizontalArrangement = Arrangement.End){
 
                     Icon(imageVector = Icons.Filled.ArrowBack,
                         contentDescription = "arrow",
                         modifier = Modifier.clickable{
                             //if (AniplexViewModal.topAiringsPage > 0)
                                 AniplexViewModal.topAiringsPage--
-                            Log.d("topairings", "HomeScreen: ${AniplexViewModal.topAiringsPage}")
+                           // Log.d("topairings", "HomeScreen: ${AniplexViewModal.topAiringsPage}")
 
-                        }.size(35.dp).align(Alignment.CenterVertically),
+                        }.size(35.dp).align(Alignment.CenterVertically).clip(RoundedCornerShape(25.dp)).background(Color.LightGray),
                         tint = Color.White
                     )
+                    Spacer(Modifier.size(40.dp))
                     Icon(imageVector = Icons.Filled.ArrowForward,
                         contentDescription = "arrow",
                         modifier = Modifier.clickable {
                             AniplexViewModal.topAiringsPage++
-                            Log.d("topairings", "HomeScreen: ${AniplexViewModal.topAiringsPage}")
+                            //Log.d("topairings", "HomeScreen: ${AniplexViewModal.topAiringsPage}")
 
-                        }.size(35.dp).align(Alignment.CenterVertically),
+                        }.size(35.dp).align(Alignment.CenterVertically).clip(RoundedCornerShape(25.dp)).background(Color.LightGray),
                         tint = Color.White
                     )
                 }
-
             }
 
 
             Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.CenterStart ,){
-
                 when(AniplexViewModal.topAirings){
                     is GetTopAirings.Error -> ErrorScreen((AniplexViewModal.topAirings as GetTopAirings.Error).message)
                     GetTopAirings.Loading -> Loading()
@@ -274,6 +277,36 @@ fun HomeScreen(AniplexViewModal: AniplexViewModal, navController: NavHostControl
                                 }
                             }
                         }
+                    }
+                }
+            }
+
+            Text(
+                "Favourite",
+                fontSize = 25.sp,
+                color = Color.White,
+                modifier = Modifier.padding(top = 15.dp)
+            )
+            Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.CenterStart ,){
+
+                var favouriteList :List<Favourite> by remember { mutableStateOf(emptyList()) }
+                LaunchedEffect(Unit) {
+                    CoroutineScope(Dispatchers.IO).launch {   AniplexViewModal.db.getFavouriteList().collectLatest { list ->
+                        favouriteList = list
+                       // favouriteList.reversed()
+                    // Log.d("room" , "${favouriteList}")
+                    }
+                    }
+                }
+
+                LazyRow(modifier = Modifier.matchParentSize(), verticalAlignment = Alignment.CenterVertically , horizontalArrangement = Arrangement.Center) {
+                    var num = 0
+                    items(favouriteList){ DATA->
+                            Log.d("room" , "${DATA.animeId} ${DATA.name} ${DATA.imageUrl} ${DATA.dubOrSub}")
+                        FavAnimeCard(DATA.animeId , DATA.name , DATA.imageUrl , num.toString()){ id->
+                            navController.navigate(NavigationRoutes.DETAIL_SCREEN.toString()+"/$id")
+                        }
+                        num++
                     }
                 }
             }
@@ -367,3 +400,48 @@ fun AnimeCard(result: ResultX , OnClick : (id:String) -> Unit = {}) {
 }
 
 
+
+@Composable
+fun FavAnimeCard(id: String,name:String,imgUrl:String,dubOrSub:String , OnClick : (id:String) -> Unit = {}) {
+    Box(
+        modifier = Modifier
+            .padding(start = 5.dp , end=5.dp )
+            .border(width = 2.dp, color = Color.White, shape = RoundedCornerShape(25.dp))
+            .clip(RoundedCornerShape(25.dp))
+            .size(140.dp, 200.dp)
+            .clickable {
+                OnClick(id)
+            },
+    )
+    {
+
+        AsyncImage(model =imgUrl , contentDescription = name , alignment = Alignment.BottomStart ,  modifier = Modifier.fillMaxSize(),contentScale = ContentScale.Crop)
+        Text(dubOrSub ,
+            fontSize = 10.sp ,
+            color = Color.White ,
+            textAlign = TextAlign.Start ,
+            modifier = Modifier
+                .clip(shape = RoundedCornerShape(bottomEnd = 25.dp))
+                .background(Color(0xFF2582f3))
+                .padding(start = 10.dp, top = 2.dp, bottom = 2.dp, end = 10.dp)
+        )
+
+        Column(
+            Modifier
+                .fillMaxSize()
+                .background(brush = Brush.verticalGradient(listOf(Color.Transparent, Color.Black))),
+            verticalArrangement = Arrangement.Bottom,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ){
+            Text( text = name ,
+                modifier = Modifier
+                    .padding(bottom = 2.dp)
+                    .fillMaxWidth(),
+                fontSize = 10.sp ,
+                color = Color.White ,
+                textAlign = TextAlign.Center ,
+                fontWeight = FontWeight.Bold
+            )
+        }
+    }
+}

@@ -81,10 +81,8 @@ fun VideoPlayer(viewModal: AniplexViewModal) {
                 viewModal.playQuality=
                     (viewModal.StreamingLink as GetStreamingData.Success).streamingData.sources
                 URL = viewModal.playQuality[0].url
-
-                Log.d("Streaming" ,  viewModal.playQuality.toString())
+                }
             }
-        }
     }
 
 
@@ -194,10 +192,10 @@ fun VideoPlayer(viewModal: AniplexViewModal) {
                             shape = RoundedCornerShape(25.dp)
                         )
                         .height(height = 55.dp)
-                        .background(Color.Gray)
+                        .background(Vibrant.copy(.5f))
                         .clickable {
                             URL = ep.url
-                            Log.d("Streaming", URL)
+                           // Log.d("Streaming", URL)
                         },
 
                     contentAlignment = Alignment.Center,
