@@ -4,7 +4,6 @@ package com.example.aniplex.UILayer
 
 
 
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -176,6 +175,7 @@ fun HomeScreen(AniplexViewModal: AniplexViewModal, navController: NavHostControl
                         Text(".", fontSize = 35.sp , color = Color.Gray)
                 }
             }
+//----------------------------------------------------------RecentReleased----------------------------------------------------------------------------------------------------------------
 
             Row (modifier = Modifier.fillMaxWidth().padding(top=20.dp).height(50.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween){
                 Text("RecentReleased ", fontSize = 25.sp , fontFamily = FontFamily.Serif , color = Color.White )
@@ -203,7 +203,6 @@ fun HomeScreen(AniplexViewModal: AniplexViewModal, navController: NavHostControl
                         tint = Color.White
                     )
                 }
-
             }
 
             Box(modifier = Modifier
@@ -220,8 +219,7 @@ fun HomeScreen(AniplexViewModal: AniplexViewModal, navController: NavHostControl
                         ){
                             items(items = (AniplexViewModal.recentEpisodes as GetRecentEpisodes.Success).data.results ){
                                 data -> NewAnimeCard(data){
-
-                                    navController.navigate(NavigationRoutes.DETAIL_SCREEN.toString()+"/$it")
+                                    navController.navigate(NavigationRoutes.DETAIL_SCREEN.toString()+"/$it"+"?isFavScreen=${false}")
                                 }
                             }
                         }
@@ -236,6 +234,9 @@ fun HomeScreen(AniplexViewModal: AniplexViewModal, navController: NavHostControl
                     }
                 }
             }
+
+            // --------------------------------------------------TopAiring----------------------------------------------------------------------
+
             Row (modifier = Modifier.fillMaxWidth().padding(top=20.dp).height(50.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween){
                 Text(" TopAirings ", fontSize = 25.sp , fontFamily = FontFamily.Serif , color = Color.White )
                 Row (modifier= Modifier.height(50.dp).padding(end= 20.dp) , horizontalArrangement = Arrangement.End){
@@ -272,15 +273,15 @@ fun HomeScreen(AniplexViewModal: AniplexViewModal, navController: NavHostControl
                         LazyRow(modifier = Modifier.matchParentSize(), verticalAlignment = Alignment.CenterVertically , horizontalArrangement = Arrangement.Center) {
                             items((AniplexViewModal.topAirings as GetTopAirings.Success).airings.results){ DATA->
 
-                                AnimeCard(DATA){ id->
-                                    navController.navigate(NavigationRoutes.DETAIL_SCREEN.toString()+"/$id")
+                                AnimeCard(DATA){ id , isFavScreen ->
+                                    navController.navigate(NavigationRoutes.DETAIL_SCREEN.toString()+"/$id"+"?isFavScreen=${false}")
                                 }
                             }
                         }
                     }
                 }
             }
-
+//-----------------------------------------------------------------Favourite----------------------------------------------------------------------------------------
             Text(
                 "Favourite",
                 fontSize = 25.sp,
@@ -295,18 +296,16 @@ fun HomeScreen(AniplexViewModal: AniplexViewModal, navController: NavHostControl
                         favouriteList = list
                        // favouriteList.reversed()
                     // Log.d("room" , "${favouriteList}")
-                    }
+                        }
                     }
                 }
 
                 LazyRow(modifier = Modifier.matchParentSize(), verticalAlignment = Alignment.CenterVertically , horizontalArrangement = Arrangement.Center) {
-                    var num = 0
                     items(favouriteList){ DATA->
-                            Log.d("room" , "${DATA.animeId} ${DATA.name} ${DATA.imageUrl} ${DATA.dubOrSub}")
-                        FavAnimeCard(DATA.animeId , DATA.name , DATA.imageUrl , num.toString()){ id->
-                            navController.navigate(NavigationRoutes.DETAIL_SCREEN.toString()+"/$id")
+                            //Log.d("room" , "${DATA.animeId} ${DATA.name} ${DATA.imageUrl} ${DATA.dubOrSub}")
+                        FavAnimeCard(DATA.animeId , DATA.name , DATA.imageUrl , DATA.dubOrSub){ id , isFavScreen ->
+                            navController.navigate(NavigationRoutes.DETAIL_SCREEN.toString()+"/$id"+"?isFavScreen=${true}")
                         }
-                        num++
                     }
                 }
             }
@@ -363,13 +362,13 @@ fun NewAnimeCard(data: Result , OnClick : (id:String) -> Unit = {} ){
 
 
 @Composable
-fun AnimeCard(result: ResultX , OnClick : (id:String) -> Unit = {}) {
+fun AnimeCard(result: ResultX , OnClick : (id:String , isFavScreen:Boolean) -> Unit = { s: String, b: Boolean -> }) {
     Box(
         modifier = Modifier.padding(5.dp)
             .border(width = 2.dp, color = Color.White, shape = RoundedCornerShape(25.dp))
             .clip(RoundedCornerShape(25.dp))
             .size(140.dp, 200.dp).clickable {
-                OnClick(result.id)
+                OnClick(result.id , false)
             }
 
     ){
@@ -402,7 +401,7 @@ fun AnimeCard(result: ResultX , OnClick : (id:String) -> Unit = {}) {
 
 
 @Composable
-fun FavAnimeCard(id: String,name:String,imgUrl:String,dubOrSub:String , OnClick : (id:String) -> Unit = {}) {
+fun FavAnimeCard(id: String,name:String,imgUrl:String,dubOrSub:String , OnClick : (id:String , isFavScreen:Boolean ) -> Unit) {
     Box(
         modifier = Modifier
             .padding(start = 5.dp , end=5.dp )
@@ -410,7 +409,7 @@ fun FavAnimeCard(id: String,name:String,imgUrl:String,dubOrSub:String , OnClick 
             .clip(RoundedCornerShape(25.dp))
             .size(140.dp, 200.dp)
             .clickable {
-                OnClick(id)
+                OnClick(id , true)
             },
     )
     {

@@ -21,19 +21,21 @@ fun Navigation( viewModal: AniplexViewModal){
             HomeScreen(viewModal,navController)
         }
 
-        composable(route = NavigationRoutes.DETAIL_SCREEN.toString()+"/{id}" , arguments = listOf(
+        composable(route = NavigationRoutes.DETAIL_SCREEN.toString()+"/{id}?isFavScreen={isFavScreen}" , arguments = listOf(
             navArgument("id"){
                 type = NavType.StringType
+            },
+            navArgument("isFavScreen"){
+                type = NavType.BoolType
             }
         )) {
             var animeId = it.arguments?.getString("id")
-            DetailScreen(viewModal,navController, animeId)
+            var isFavScreen = it.arguments?.getBoolean("isFavScreen")
+            DetailScreen(viewModal,navController, animeId , isFavScreen)
         }
 
         composable(route= NavigationRoutes.VIDEOPLAYER_SCREEN.toString()){
             VideoPlayer(viewModal)
-
-
         }
     }
 }

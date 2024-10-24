@@ -18,5 +18,7 @@ interface FavDAO {
     @Query("DELETE FROM Favourite WHERE animeId = :id")
     suspend fun removeAnime(id :String )
 
+    @Query("SELECT EXISTS(SELECT 1 FROM Favourite WHERE animeId = :id) ")
+    suspend fun isFavourite(id:String):Boolean
 
 }

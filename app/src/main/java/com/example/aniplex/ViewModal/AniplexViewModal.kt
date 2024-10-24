@@ -13,8 +13,12 @@ import com.example.aniplex.Repository.AniplexRepo
 import com.example.aniplex.Repository.RoomDBRepo
 import com.example.aniplex.RoomDb.Favourite
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import retrofit2.HttpException
 import javax.inject.Inject
 
@@ -93,7 +97,7 @@ class AniplexViewModal @Inject constructor( private val repo : AniplexRepo ,  va
 
 
     fun getAnimeInfo(AnimeId : String ){
-        viewModelScope.launch {
+        CoroutineScope(Dispatchers.IO).launch {
             AnimeInfo = try {
                 GetAnimeInfo.Success(repo.getAnimeInfo(AnimeId ?: ""))
 
@@ -106,14 +110,17 @@ class AniplexViewModal @Inject constructor( private val repo : AniplexRepo ,  va
     }
 
     fun insertFav(id:String , name:String ,imgUrl :String ,dubOrSub:String ){
-        viewModelScope.launch {
+        CoroutineScope(Dispatchers.IO).launch {
             db.addFavouriteAnime(id,name,imgUrl,dubOrSub)
         }
     }
     fun DeleteFav(id:String  ){
-        viewModelScope.launch {
+        CoroutineScope(Dispatchers.IO).launch {
             db.deleteFavAnime(id)
         }
+    }
+    suspend fun isFavourite(id: String): Boolean = withContext(Dispatchers.IO) {
+        db.isFavourite(id)
     }
 }
 

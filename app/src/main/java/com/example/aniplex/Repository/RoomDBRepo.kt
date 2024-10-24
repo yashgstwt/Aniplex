@@ -13,6 +13,8 @@ interface roomDbInterface{
     suspend fun addFavouriteAnime(id:String , name:String ,imgUrl :String ,dubOrSub:String)
 
     suspend fun deleteFavAnime(id:String)
+
+    suspend fun  isFavourite(id:String):Boolean
 }
 
 
@@ -29,5 +31,9 @@ class RoomDBRepo @Inject constructor (val dao : FavDAO ) :roomDbInterface {
 
     override suspend fun deleteFavAnime(id: String) {
         dao.removeAnime(id)
+    }
+
+    override suspend fun isFavourite(id: String): Boolean {
+        return dao.isFavourite(id)
     }
 }

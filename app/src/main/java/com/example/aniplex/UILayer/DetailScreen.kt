@@ -52,7 +52,6 @@ import coil.compose.AsyncImage
 import coil.compose.AsyncImagePainter
 import com.example.aniplex.DataLayer.AnimeInfo
 import com.example.aniplex.Navigation.NavigationRoutes
-import com.example.aniplex.RoomDb.Favourite
 import com.example.aniplex.ViewModal.AniplexViewModal
 import com.example.aniplex.ViewModal.GetAnimeInfo
 import com.example.aniplex.ui.theme.Vibrant
@@ -65,7 +64,12 @@ import kotlinx.coroutines.launch
 
 
 @Composable
-fun DetailScreen(viewModal: AniplexViewModal, navController: NavHostController, animeId: String?) {
+fun DetailScreen(
+    viewModal: AniplexViewModal,
+    navController: NavHostController,
+    animeId: String?,
+    isFavScreen: Boolean? = false
+) {
 
     LaunchedEffect(key1 = Unit ) {
         viewModal.AnimeInfo = GetAnimeInfo.Loading
@@ -77,7 +81,7 @@ fun DetailScreen(viewModal: AniplexViewModal, navController: NavHostController, 
             Log.d("DetailScreen"," ${ (viewModal.AnimeInfo as GetAnimeInfo.Success).animeInfo }")
             var animeInfo:AnimeInfo =  (viewModal.AnimeInfo as GetAnimeInfo.Success).animeInfo
             viewModal.AnimeEpisodesIDs = animeInfo.episodes
-            DetailScreenUi(animeInfo, navController, viewModal)
+            DetailScreenUi(animeInfo, navController, viewModal , isFavScreen)
         }
 
         is GetAnimeInfo.Error -> {
@@ -94,7 +98,8 @@ fun DetailScreen(viewModal: AniplexViewModal, navController: NavHostController, 
 fun DetailScreenUi(
     animeInfo: AnimeInfo,
     navController: NavHostController,
-    viewModal: AniplexViewModal
+    viewModal: AniplexViewModal,
+    isFavScreen: Boolean? = false
 ) {
     var darkVibrant by remember { mutableStateOf(gradiantColor) }
     var vibrant by remember { mutableStateOf(Color.LightGray) }
@@ -201,20 +206,38 @@ fun DetailScreenUi(
                 }
 
                 var favColor by remember { mutableStateOf(Color.Black) }
-                var isClicked by remember { mutableStateOf(false) }
+                //var isFav:Boolean by remember { mutableStateOf(false) }
+
+                var isClicked by remember { mutableStateOf(isFavScreen!!) }
+                Log.d("room","----------------------"+isFavScreen.toString())
+
+//                LaunchedEffect (Unit){  // used to search in db , weather that anime is favourite or not
+//                    CoroutineScope(Dispatchers.IO).launch {
+//                        isFav = viewModal.isFavourite(animeInfo.id)
+//                    }.join()
+//                    isClicked = isFav
+//                }
+
+                    if(isClicked){
+                        favColor = Color.Red
+                    }else{
+                        favColor = Color.Black
+                    }
+
+                    Log.d("room" , "From launchedEffect" + isClicked.toString())
+                    if (isClicked && !isFavScreen!!) {
+                       // favColor = Color.Red
+                        viewModal.insertFav(animeInfo.id,animeInfo.title,animeInfo.image,animeInfo.subOrDub)
+
+                    } else if( !isClicked && isFavScreen!!) {
+                       // favColor = Color.Black
+                        viewModal.DeleteFav(animeInfo.id)
+                    }
+
+
                 Box(modifier = Modifier
                     .clickable {
                         isClicked = !isClicked
-                       if (isClicked) {
-                           favColor = Color.Red
-
-                               viewModal.insertFav(animeInfo.id,animeInfo.title,animeInfo.image,animeInfo.subOrDub)
-
-                        } else {
-                           favColor = Color.Black
-                               viewModal.DeleteFav(animeInfo.id)
-                        }
-
                     }
                     .clip(shape = RoundedCornerShape(25.dp))
                     .background(vibrant.copy(.7f))
