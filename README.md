@@ -1,6 +1,6 @@
 # Aniplex
 
-Aniplex is the ultimate anime streaming app for enthusiasts and newcomers alike. Dive into a vast library of captivating anime series, movies, and OVAs, all in high definition. 
+Aniplex is the ultimate anime streaming app for Anime fans. Dive into a vast library of captivating anime in high definition. 
 
 **Features:**
 
@@ -12,3 +12,14 @@ Aniplex is the ultimate anime streaming app for enthusiasts and newcomers alike.
 
 
 **Concepts Implemented:**
+
+* **Room:**For storing favourite animes,
+* **REST Api & Retrofit :**For network call.
+* **Exoplayer:**For anime Streaming.
+* **Coil:** For Asynchronous Image loading.
+* **Api Hosting :**Hosted API on Versal.
+* **Dagger Hilt :** For Dependency Injection.
+* **Palette:** For Background Color based on image.
+
+  
+
