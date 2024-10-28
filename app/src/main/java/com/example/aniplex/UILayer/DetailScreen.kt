@@ -50,7 +50,7 @@ import androidx.navigation.NavHostController
 import androidx.palette.graphics.Palette
 import coil.compose.AsyncImage
 import coil.compose.AsyncImagePainter
-import com.example.aniplex.DataLayer.AnimeInfo
+import com.example.aniplex.DataLayer.aniplexApi.AnimeInfo
 import com.example.aniplex.Navigation.NavigationRoutes
 import com.example.aniplex.ViewModal.AniplexViewModal
 import com.example.aniplex.ViewModal.GetAnimeInfo
@@ -58,9 +58,6 @@ import com.example.aniplex.ui.theme.Vibrant
 import com.example.aniplex.ui.theme.VibrantDark
 import com.example.aniplex.ui.theme.black
 import com.example.aniplex.ui.theme.gradiantColor
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 
 @Composable
@@ -79,7 +76,7 @@ fun DetailScreen(
     when (viewModal.AnimeInfo) {
         is GetAnimeInfo.Success -> {
             Log.d("DetailScreen"," ${ (viewModal.AnimeInfo as GetAnimeInfo.Success).animeInfo }")
-            var animeInfo:AnimeInfo =  (viewModal.AnimeInfo as GetAnimeInfo.Success).animeInfo
+            var animeInfo: AnimeInfo =  (viewModal.AnimeInfo as GetAnimeInfo.Success).animeInfo
             viewModal.AnimeEpisodesIDs = animeInfo.episodes
             DetailScreenUi(animeInfo, navController, viewModal , isFavScreen)
         }
@@ -206,33 +203,19 @@ fun DetailScreenUi(
                 }
 
                 var favColor by remember { mutableStateOf(Color.Black) }
-                //var isFav:Boolean by remember { mutableStateOf(false) }
-
                 var isClicked by remember { mutableStateOf(isFavScreen!!) }
-                Log.d("room","----------------------"+isFavScreen.toString())
 
-//                LaunchedEffect (Unit){  // used to search in db , weather that anime is favourite or not
-//                    CoroutineScope(Dispatchers.IO).launch {
-//                        isFav = viewModal.isFavourite(animeInfo.id)
-//                    }.join()
-//                    isClicked = isFav
-//                }
+                if(isClicked){
+                    favColor = Color.Red
+                }else{
+                    favColor = Color.Black
+                }
 
-                    if(isClicked){
-                        favColor = Color.Red
-                    }else{
-                        favColor = Color.Black
-                    }
-
-                    Log.d("room" , "From launchedEffect" + isClicked.toString())
-                    if (isClicked && !isFavScreen!!) {
-                       // favColor = Color.Red
-                        viewModal.insertFav(animeInfo.id,animeInfo.title,animeInfo.image,animeInfo.subOrDub)
-
-                    } else if( !isClicked && isFavScreen!!) {
-                       // favColor = Color.Black
-                        viewModal.DeleteFav(animeInfo.id)
-                    }
+                if (isClicked && !isFavScreen!!) {
+                    viewModal.insertFav(animeInfo.id,animeInfo.title,animeInfo.image,animeInfo.subOrDub)
+                } else if( !isClicked && isFavScreen!!) {
+                    viewModal.DeleteFav(animeInfo.id)
+                }
 
 
                 Box(modifier = Modifier

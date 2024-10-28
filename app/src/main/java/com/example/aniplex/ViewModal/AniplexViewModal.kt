@@ -7,15 +7,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.aniplex.DataLayer.Episode
-import com.example.aniplex.DataLayer.Source
+import com.example.aniplex.DataLayer.QuoteApi.RandomQuote
+import com.example.aniplex.DataLayer.aniplexApi.Episode
+import com.example.aniplex.DataLayer.aniplexApi.Source
 import com.example.aniplex.Repository.AniplexRepo
+import com.example.aniplex.Repository.QuoteRepo
 import com.example.aniplex.Repository.RoomDBRepo
-import com.example.aniplex.RoomDb.Favourite
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -24,7 +24,7 @@ import javax.inject.Inject
 
 
 @HiltViewModel
-class AniplexViewModal @Inject constructor( private val repo : AniplexRepo ,  val db : RoomDBRepo) : ViewModel() {
+class AniplexViewModal @Inject constructor( private val repo : AniplexRepo ,  val db : RoomDBRepo , val quoteRepo: QuoteRepo) : ViewModel() {
 
     var AnimeInfo : GetAnimeInfo by mutableStateOf(GetAnimeInfo.Loading)
 
@@ -38,6 +38,7 @@ class AniplexViewModal @Inject constructor( private val repo : AniplexRepo ,  va
     var recentEpisodes : GetRecentEpisodes by mutableStateOf(GetRecentEpisodes.Loading)
     private set
 
+    var quote: GetQuote by mutableStateOf(GetQuote.Loading)
 
     var search : GetSearch by mutableStateOf(GetSearch.Loading)
 
@@ -52,6 +53,7 @@ class AniplexViewModal @Inject constructor( private val repo : AniplexRepo ,  va
 
     init {
         viewModelScope.launch {
+            getQuote()
             getRecentEpisode()
             delay(5000)
             Log.d("Stream" , recentEpisodes.toString())
@@ -119,8 +121,28 @@ class AniplexViewModal @Inject constructor( private val repo : AniplexRepo ,  va
             db.deleteFavAnime(id)
         }
     }
-    suspend fun isFavourite(id: String): Boolean = withContext(Dispatchers.IO) {
+    suspend fun isFavourite(id: String): Boolean = withContext(Dispatchers.IO) { // used to check for a particular anime is saved to favourite section (room db)
         db.isFavourite(id)
+    }
+    fun getSearch(name:String , pages:Int = 1){
+       viewModelScope.launch {
+           search =  try {
+            GetSearch.Success(repo.getSearchResult(name, pages))
+
+           } catch (e:Exception){
+              GetSearch.ERROR(e.toString())
+           }
+        }
+    }
+
+    fun getQuote(){
+        CoroutineScope(Dispatchers.IO).launch{
+        quote = try {
+            GetQuote.Success(quoteRepo.getRandomQuote())
+        }catch (e:Exception){
+            GetQuote.Error(e.toString())
+            }
+        }
     }
 }
 

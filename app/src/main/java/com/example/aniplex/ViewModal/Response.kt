@@ -1,11 +1,12 @@
 package com.example.aniplex.ViewModal
 
-import com.example.aniplex.DataLayer.AnimeInfo
-import com.example.aniplex.DataLayer.RecentEpisodes
-import com.example.aniplex.DataLayer.Search
-import com.example.aniplex.DataLayer.StreamingData
+import com.example.aniplex.DataLayer.QuoteApi.RandomQuote
+import com.example.aniplex.DataLayer.aniplexApi.AnimeInfo
+import com.example.aniplex.DataLayer.aniplexApi.RecentEpisodes
+import com.example.aniplex.DataLayer.aniplexApi.Search
+import com.example.aniplex.DataLayer.aniplexApi.StreamingData
 
-import com.example.aniplex.DataLayer.TopAiring
+import com.example.aniplex.DataLayer.aniplexApi.TopAiring
 
 
 sealed interface GetTopAirings {
@@ -21,7 +22,7 @@ sealed interface GetStreamingData {
 }
 
 sealed interface GetAnimeInfo {
-    data class Success(val animeInfo: AnimeInfo ):GetAnimeInfo
+    data class Success(val animeInfo: AnimeInfo):GetAnimeInfo
     data class Error(val message: Exception):GetAnimeInfo
     data object Loading : GetAnimeInfo
 }
@@ -36,5 +37,11 @@ sealed interface GetSearch {
     data class Success(val search: Search):GetSearch
     data class ERROR(val message: String):GetSearch
     data object Loading : GetSearch
+
+}
+sealed interface GetQuote{
+    data class Success(val quote:RandomQuote):GetQuote
+    data class Error(val message: String):GetQuote
+    data object Loading : GetQuote
 
 }

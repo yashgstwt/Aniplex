@@ -1,12 +1,12 @@
 package com.example.aniplex.Repository
 
 
-import com.example.aniplex.DataLayer.AnimeInfo
-import com.example.aniplex.DataLayer.RecentEpisodes
-import com.example.aniplex.DataLayer.Search
-import com.example.aniplex.DataLayer.StreamingData
-import com.example.aniplex.DataLayer.TopAiring
-import com.example.aniplex.Module.ApiEndPoints
+import com.example.aniplex.DataLayer.aniplexApi.AnimeInfo
+import com.example.aniplex.DataLayer.aniplexApi.RecentEpisodes
+import com.example.aniplex.DataLayer.aniplexApi.Search
+import com.example.aniplex.DataLayer.aniplexApi.StreamingData
+import com.example.aniplex.DataLayer.aniplexApi.TopAiring
+import com.example.aniplex.Module.AniplexApiEndPoints
 import javax.inject.Inject
 
 interface AniplexRepoInter {
@@ -19,7 +19,7 @@ interface AniplexRepoInter {
 
 }
 
-class AniplexRepo @Inject constructor (private var api : ApiEndPoints) : AniplexRepoInter{
+class AniplexRepo @Inject constructor (private var api : AniplexApiEndPoints) : AniplexRepoInter{
     override suspend fun getTopAirings(page : Int): TopAiring {
         return  api.getTopAirings(page)
     }
