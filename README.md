@@ -13,9 +13,9 @@ Aniplex is the ultimate anime streaming app for Anime fans. Dive into a vast lib
 
 **Concepts Implemented:**
 
-* **Room:**For storing favourite animes,
-* **REST Api & Retrofit:**For network call.
-* **Exoplayer:**For anime Streaming.
+* **Room:** For storing favourite animes,
+* **REST Api & Retrofit:** For network call.
+* **Exoplayer:** For anime Streaming.
 * **Coil:** For Asynchronous Image loading.
 * **Api Hosting:** Hosted API on Versal.
 * **Dagger Hilt:** For Dependency Injection.
