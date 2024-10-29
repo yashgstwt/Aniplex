@@ -2,6 +2,7 @@ package com.example.aniplex.UILayer
 
 import android.graphics.Bitmap
 import android.util.Log
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -65,7 +66,7 @@ fun DetailScreen(
     viewModal: AniplexViewModal,
     navController: NavHostController,
     animeId: String?,
-    isFavScreen: Boolean? = false
+    isFavScreen: Boolean? = false,
 ) {
 
     LaunchedEffect(key1 = Unit ) {
@@ -75,7 +76,6 @@ fun DetailScreen(
 
     when (viewModal.AnimeInfo) {
         is GetAnimeInfo.Success -> {
-            Log.d("DetailScreen"," ${ (viewModal.AnimeInfo as GetAnimeInfo.Success).animeInfo }")
             var animeInfo: AnimeInfo =  (viewModal.AnimeInfo as GetAnimeInfo.Success).animeInfo
             viewModal.AnimeEpisodesIDs = animeInfo.episodes
             DetailScreenUi(animeInfo, navController, viewModal , isFavScreen)
@@ -96,7 +96,7 @@ fun DetailScreenUi(
     animeInfo: AnimeInfo,
     navController: NavHostController,
     viewModal: AniplexViewModal,
-    isFavScreen: Boolean? = false
+    isFavScreen: Boolean? = false,
 ) {
     var darkVibrant by remember { mutableStateOf(gradiantColor) }
     var vibrant by remember { mutableStateOf(Color.LightGray) }
@@ -306,3 +306,5 @@ fun AdaptiveText(
         }
     }
 }
+
+//https://www116.anzeat.pro/streamhls/1fedead0f91b1dad2224eb0bf28b1222/ep.2.1730169877.360.m3u8

@@ -91,9 +91,6 @@ fun HomeScreen(AniplexViewModal: AniplexViewModal, navController: NavHostControl
 
 
     val scrollState = rememberScrollState()
-    var currentPoster by remember { mutableStateOf(0) }
-
-    var offsetX by remember { mutableStateOf(0f) }
 
     Scaffold(floatingActionButton = {
         FloatingActionButton(onClick = {navController.navigate(NavigationRoutes.SEARCH_SCREEN.toString())} , containerColor = gradiantColor, contentColor = Color.White) {
@@ -249,6 +246,7 @@ fun HomeScreen(AniplexViewModal: AniplexViewModal, navController: NavHostControl
                                 ) {
                                 items(items = (AniplexViewModal.recentEpisodes as GetRecentEpisodes.Success).data.results) { data ->
                                     NewAnimeCard(data) {
+                                        AniplexViewModal.currentEpisode = data.episodeNumber-1
                                         navController.navigate(NavigationRoutes.DETAIL_SCREEN.toString() + "/$it" + "?isFavScreen=${false}")
                                     }
                                 }

@@ -28,6 +28,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -52,6 +53,7 @@ import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.hls.HlsMediaSource
 import androidx.media3.ui.PlayerView
+import com.example.aniplex.R
 import com.example.aniplex.ViewModal.AniplexViewModal
 import com.example.aniplex.ViewModal.GetStreamingData
 import com.example.aniplex.ui.theme.Vibrant
@@ -66,25 +68,24 @@ import com.google.accompanist.systemuicontroller.rememberSystemUiController
 @OptIn(UnstableApi::class)
 @Composable
 fun VideoPlayer(viewModal: AniplexViewModal) {
-    var currentEpPlaying by remember { mutableStateOf(viewModal.AnimeEpisodesIDs[0].id) }
-    var URL by remember { mutableStateOf(viewModal.playQuality[0].url) }
+    var currentEpPlaying by remember { mutableStateOf(viewModal.AnimeEpisodesIDs[viewModal.currentEpisode].id) }
+    var playQualityIndex by remember { mutableIntStateOf(0) }
+    var URL by remember { mutableStateOf(viewModal.playQuality[playQualityIndex].url) }
 
    // Log.d("Streaming" ,"hayyyyyy" +currentEpPlaying)
     // method to get streaming link from episode id  i.e from currentEpPlaying
     viewModal.getStreamingLink( currentEpPlaying , viewModal.playbackServer)
 
     LaunchedEffect(viewModal.StreamingLink) {
-            when(viewModal.StreamingLink){
-            is GetStreamingData.Error ->  Log.d("Streaming" , (viewModal.StreamingLink as GetStreamingData.Error).message.toString())
+        when(viewModal.StreamingLink){
+            is GetStreamingData.Error ->  Log.d("Streaming" , (viewModal.StreamingLink as GetStreamingData.Error).message)
             is GetStreamingData.Loading -> Log.d("Streaming" , "Loading")
             is GetStreamingData.Success -> {
-                viewModal.playQuality=
-                    (viewModal.StreamingLink as GetStreamingData.Success).streamingData.sources
-                URL = viewModal.playQuality[0].url
-                }
+                viewModal.playQuality= (viewModal.StreamingLink as GetStreamingData.Success).streamingData.sources
+                URL = viewModal.playQuality[playQualityIndex].url
             }
+        }
     }
-
 
     // Get the current context
     val context = LocalContext.current
@@ -94,12 +95,11 @@ fun VideoPlayer(viewModal: AniplexViewModal) {
 
 
     LaunchedEffect (URL){
-        if(!URL.isEmpty()) {
+        if(URL.isNotEmpty()) {
             val hlsDataSourceFactory = DefaultHttpDataSource.Factory()
             val uri = Uri.Builder().encodedPath(URL).build() // streaming url
             val hlsMediaItem = MediaItem.Builder().setUri(uri).build()
-            val mediaSource =
-                HlsMediaSource.Factory(hlsDataSourceFactory).createMediaSource(hlsMediaItem)
+            val mediaSource = HlsMediaSource.Factory(hlsDataSourceFactory).createMediaSource(hlsMediaItem)
             exoPlayer.setMediaSource(mediaSource)
             exoPlayer.prepare()
         }
@@ -114,7 +114,7 @@ fun VideoPlayer(viewModal: AniplexViewModal) {
     if (isLandscape) {
        height = 1f
     } else {
-        height = 0.3f
+        height = 0.27f
     }
     val systemUiController: SystemUiController = rememberSystemUiController()
 
@@ -131,40 +131,41 @@ fun VideoPlayer(viewModal: AniplexViewModal) {
         .fillMaxSize()
         .background(brush = Brush.verticalGradient(brush))
     ) {
-        if (exoPlayer.playbackState != ExoPlayer.STATE_READY){
-            CircularProgressIndicator(modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight(height)
-                .wrapContentHeight(Alignment.CenterVertically)
-                .wrapContentWidth(Alignment.CenterHorizontally)
-            )
-        }else{
+        Box(modifier = Modifier.fillMaxWidth().statusBarsPadding().fillMaxHeight(height).wrapContentHeight(Alignment.CenterVertically) , contentAlignment = Alignment.Center) {
             AndroidView(
-            factory = { ctx ->
-                PlayerView(ctx).apply {
-                    player = exoPlayer
-                }
-            },
-            modifier = Modifier
-                .background(Color.Black.copy(alpha = .5f))
-                .fillMaxWidth()
-                .fillMaxHeight(height)
-                .also {
-                    if (isLandscape) {
-                        systemUiController.isStatusBarVisible = false
-                        systemUiController.isNavigationBarVisible = false
-                        systemUiController.isSystemBarsVisible =
-                            false // Optional: Hide both bars at once
-                    } else {
-                        systemUiController.isStatusBarVisible = true
-                        systemUiController.isNavigationBarVisible = true
-                        systemUiController.isSystemBarsVisible =
-                            true // Optional: Show both bars at once
+                factory = { ctx ->
+                    PlayerView(ctx).apply {
+                        player = exoPlayer
                     }
+                },
+                modifier = Modifier
+                    .background(Color.Black.copy(alpha = .5f))
+                    .fillMaxWidth()
+                    .fillMaxHeight()
+                    .also {
+                        if (isLandscape) {
+                            systemUiController.isStatusBarVisible = false
+                            systemUiController.isNavigationBarVisible = false
+                            systemUiController.isSystemBarsVisible =
+                                false // Optional: Hide both bars at once
+                        } else {
+                            systemUiController.isStatusBarVisible = true
+                            systemUiController.isNavigationBarVisible = true
+                            systemUiController.isSystemBarsVisible =
+                                true // Optional: Show both bars at once
+                        }
 
-                }
-                .statusBarsPadding()
+                    }
             )
+            if (exoPlayer.playbackState != ExoPlayer.STATE_READY || exoPlayer.playbackState == ExoPlayer.STATE_BUFFERING) {
+                CircularProgressIndicator(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .fillMaxHeight(height)
+                        .wrapContentHeight(Alignment.CenterVertically)
+                        .wrapContentWidth(Alignment.CenterHorizontally)
+                )
+            }
         }
 
         Text("Quality" , modifier = Modifier
@@ -194,8 +195,9 @@ fun VideoPlayer(viewModal: AniplexViewModal) {
                         .height(height = 55.dp)
                         .background(Vibrant.copy(.5f))
                         .clickable {
-                            URL = ep.url
-                           // Log.d("Streaming", URL)
+                          //  URL = ep.url
+                            playQualityIndex = viewModal.playQuality.indexOf(ep)
+                            Log.d("Streaming", URL)
                         },
 
                     contentAlignment = Alignment.Center,
@@ -208,9 +210,7 @@ fun VideoPlayer(viewModal: AniplexViewModal) {
                         textAlign = TextAlign.Center
                     )
                 }
-
             }
-
         }
 
 
@@ -223,7 +223,7 @@ fun VideoPlayer(viewModal: AniplexViewModal) {
         )
 
         //Episodes ids
-
+    var currentEp by remember { mutableStateOf(viewModal.currentEpisode) }
         LazyColumn(modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(topStart = 25.dp, topEnd = 25.dp))
@@ -243,12 +243,14 @@ fun VideoPlayer(viewModal: AniplexViewModal) {
                             color = Color.White,
                             shape = RoundedCornerShape(25.dp)
                         )
-                        .background(Vibrant)
+                        .background(if ( ep.number == currentEp ) VibrantDark.copy(.5f) else Vibrant)
                         .clickable {
                             currentEpPlaying = ep.id
+                            currentEp = ep.number
                         },
                     contentAlignment = Alignment.Center,
                 ) {
+
                     Text("Episode "+ ep.number.toString(), modifier = Modifier.padding(start = 5.dp , end = 5.dp), fontSize = 10.sp, color = Color.White, textAlign = TextAlign.Center)
                 }
 

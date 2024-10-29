@@ -71,9 +71,6 @@ fun FullLoadingScreen(){
         Box(modifier = Modifier
             .fillMaxSize()
             .background(brush = Brush.verticalGradient(listOf(gradiantColor, black)))
-            .verticalScroll(
-                rememberScrollState()
-            )
         ) {
             Column(modifier = Modifier
                 .fillMaxSize()
@@ -99,17 +96,6 @@ fun FullLoadingScreen(){
                         ,
                     )
                 }
-
-                AdaptiveText(
-                    text = "title",
-                    fontSize = 35.sp,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 20.dp),
-                    color = Color.White,
-                    textAlign = TextAlign.Start,
-                    fontFamily = FontFamily.Serif,
-                )
 
 
                 Row(

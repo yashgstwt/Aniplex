@@ -3,6 +3,7 @@ package com.example.aniplex.ViewModal
 
 import android.util.Log
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
@@ -48,8 +49,11 @@ class AniplexViewModal @Inject constructor( private val repo : AniplexRepo ,  va
 
     var playbackServer : String by mutableStateOf("gogocdn")
 
-    var topAiringsPage:Int by mutableStateOf(1)
-    var recentReleasedPage:Int by mutableStateOf(1)
+    var topAiringsPage:Int by mutableIntStateOf(1)
+
+    var recentReleasedPage:Int by mutableIntStateOf(1)
+
+    var currentEpisode by mutableIntStateOf(0)
 
     init {
         viewModelScope.launch {
@@ -89,8 +93,6 @@ class AniplexViewModal @Inject constructor( private val repo : AniplexRepo ,  va
                 GetRecentEpisodes.Success(repo.getRecentEpisodes(page,DubSub))
             }catch (e:Exception){
                 GetRecentEpisodes.Error(e)
-
-
             }catch (e: HttpException){
                 GetRecentEpisodes.Error(e)
             }
