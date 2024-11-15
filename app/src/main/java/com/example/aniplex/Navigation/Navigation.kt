@@ -1,11 +1,13 @@
 package com.example.aniplex.Navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.aniplex.UILayer.CustomVideoPlayer
 import com.example.aniplex.UILayer.DetailScreen
 import com.example.aniplex.UILayer.HomeScreen
 import com.example.aniplex.UILayer.SearchScreen
@@ -36,7 +38,7 @@ fun Navigation( viewModal: AniplexViewModal){
         }
 
         composable(route= NavigationRoutes.VIDEOPLAYER_SCREEN.toString()){
-            VideoPlayer(viewModal)
+            CustomVideoPlayer(modifier = Modifier,viewModal)
         }
         composable(route = NavigationRoutes.SEARCH_SCREEN.toString() ) {
             SearchScreen(viewModal,navController)

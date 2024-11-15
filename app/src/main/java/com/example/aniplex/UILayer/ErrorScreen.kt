@@ -19,10 +19,10 @@ import com.example.aniplex.R
 
 @Preview(showSystemUi = true, )
 @Composable
-fun ErrorScreen(msg:String= "ERROR 404 "){
+fun ErrorScreen(msg:String= "ERROR 404"){
 
     Box(modifier = Modifier.fillMaxWidth().height(200.dp)){
-        Text(text = msg ,
+        Text(text = "ERROR 404" ,
             modifier = Modifier.fillMaxWidth().align(Alignment.BottomCenter),
             textAlign = TextAlign.Center ,
             fontSize = 35.sp ,

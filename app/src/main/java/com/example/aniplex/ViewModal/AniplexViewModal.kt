@@ -17,11 +17,20 @@ import com.example.aniplex.Repository.RoomDBRepo
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.time.debounce
 import kotlinx.coroutines.withContext
 import retrofit2.HttpException
 import javax.inject.Inject
+import kotlin.math.log
 
 
 @HiltViewModel
@@ -55,12 +64,31 @@ class AniplexViewModal @Inject constructor( private val repo : AniplexRepo ,  va
 
     var currentEpisode by mutableIntStateOf(0)
 
+
+    fun updateCurrentEpisode(ep:Int){
+        currentEpisode = ep
+    }
+
+
+    val currentVideoTime = MutableSharedFlow<Long>(replay = 1)
+
+    @OptIn(FlowPreview::class)
+    val debouncedCurrentVideoTime = currentVideoTime.debounce(1000)
+    fun updateCurrentVideoTime(time:Long){
+        CoroutineScope(Dispatchers.IO).launch{
+            currentVideoTime.emit(time).also {
+                Log.d("video1" , "currentVideoTime : $time")
+            }
+        }
+    }
+
+
     init {
         viewModelScope.launch {
             getQuote()
             getRecentEpisode()
-            delay(5000)
-            Log.d("Stream" , recentEpisodes.toString())
+//            delay(5000)
+//            Log.d("Stream" , recentEpisodes.toString())
             getTopAirings(topAiringsPage)
         }
     }
@@ -144,6 +172,20 @@ class AniplexViewModal @Inject constructor( private val repo : AniplexRepo ,  va
         }catch (e:Exception){
             GetQuote.Error(e.toString())
             }
+        }
+    }
+
+    private val _isLandscape = MutableStateFlow(false )
+    val isLandscape: StateFlow<Boolean> = _isLandscape.asStateFlow().also {
+        Log.d("viewmodal", " from val _isLandscape ${_isLandscape.value}")
+    }
+
+    fun getIsLandscape(): Boolean {
+        return _isLandscape.value
+    }
+    fun updateOrientation() {
+        _isLandscape.update { _isLandscape.value.not() }.also {
+            Log.d("viewmodal", "updateOrientation called : ${_isLandscape.value}")
         }
     }
 }
