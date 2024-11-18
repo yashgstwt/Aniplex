@@ -230,7 +230,7 @@ fun VideoPlayer(viewModal: AniplexViewModal) {
             .background(brush = Brush.verticalGradient(listOf(Vibrant.copy(.5f), Color.Transparent)))
             , contentPadding = PaddingValues(10.dp)
         ) {
-            items(viewModal.AnimeEpisodesIDs.asReversed()){
+            items(viewModal.AnimeEpisodesIDs){
                     ep->
                 Box(
                     modifier = Modifier

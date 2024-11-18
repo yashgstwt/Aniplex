@@ -70,15 +70,15 @@ class AniplexViewModal @Inject constructor( private val repo : AniplexRepo ,  va
     }
 
 
-    val currentVideoTime = MutableSharedFlow<Long>(replay = 1)
+    val currentVideoTime = MutableStateFlow<Long>( 0)
 
-    @OptIn(FlowPreview::class)
-    val debouncedCurrentVideoTime = currentVideoTime.debounce(1000)
+
     fun updateCurrentVideoTime(time:Long){
         CoroutineScope(Dispatchers.IO).launch{
             currentVideoTime.emit(time).also {
                 Log.d("video1" , "currentVideoTime : $time")
             }
+            delay(1000)
         }
     }
 
@@ -87,8 +87,6 @@ class AniplexViewModal @Inject constructor( private val repo : AniplexRepo ,  va
         viewModelScope.launch {
             getQuote()
             getRecentEpisode()
-//            delay(5000)
-//            Log.d("Stream" , recentEpisodes.toString())
             getTopAirings(topAiringsPage)
         }
     }

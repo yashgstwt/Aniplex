@@ -53,7 +53,6 @@ import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -66,7 +65,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.Player.STATE_BUFFERING
@@ -79,17 +77,22 @@ import com.example.aniplex.ViewModal.GetStreamingData
 import com.example.aniplex.ui.theme.Vibrant
 import com.example.aniplex.ui.theme.VibrantDark
 import com.example.aniplex.ui.theme.black
+import com.google.accompanist.systemuicontroller.SystemUiController
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.update
 import java.util.concurrent.TimeUnit
+import kotlin.time.Duration.Companion.seconds
 
 private const val PLAYER_SEEK_BACK_INCREMENT = 10 * 1000L // 10 seconds
 private const val PLAYER_SEEK_FORWARD_INCREMENT = 15 * 1000L // 15 seconds
 @androidx.annotation.OptIn(UnstableApi::class)
 @Composable
-fun CustomVideoPlayer(modifier: Modifier = Modifier.statusBarsPadding() , viewModal: AniplexViewModal) {
+fun CustomVideoPlayer(modifier: Modifier = Modifier , viewModal: AniplexViewModal) {
 
     var currentEpPlayingID by remember { mutableStateOf(viewModal.AnimeEpisodesIDs[viewModal.currentEpisode].id) }
-    var playQualityIndex by remember { mutableIntStateOf(0) }
-    var URL by remember { mutableStateOf(viewModal.playQuality[playQualityIndex].url) }
+    //var playQualityIndex by remember { mutableIntStateOf(0) }
+    var URL by remember { mutableStateOf(viewModal.playQuality[0].url) }
 
     // Log.d("Streaming" ,"hay" +currentEpPlaying)
     // method to get streaming link from episode id  i.e from currentEpPlaying
@@ -98,6 +101,8 @@ fun CustomVideoPlayer(modifier: Modifier = Modifier.statusBarsPadding() , viewMo
         viewModal.getStreamingLink(currentEpPlayingID, viewModal.playbackServer)
     }
 
+
+    val systemUiController: SystemUiController = rememberSystemUiController()
     val context = LocalContext.current
     val activity = context as? Activity
     var height by remember { mutableFloatStateOf(.3f) }
@@ -128,7 +133,7 @@ fun CustomVideoPlayer(modifier: Modifier = Modifier.statusBarsPadding() , viewMo
             is GetStreamingData.Success -> {
                 viewModal.playQuality =
                     (viewModal.StreamingLink as GetStreamingData.Success).streamingData.sources
-                URL = viewModal.playQuality[playQualityIndex].url
+                URL = viewModal.playQuality[0].url
             }
         }
     }
@@ -136,6 +141,7 @@ fun CustomVideoPlayer(modifier: Modifier = Modifier.statusBarsPadding() , viewMo
 
     val exoPlayer = remember {
         ExoPlayer.Builder(context)
+
             .apply {
                 setSeekBackIncrementMs(PLAYER_SEEK_BACK_INCREMENT)
                 setSeekForwardIncrementMs(PLAYER_SEEK_FORWARD_INCREMENT)
@@ -161,7 +167,6 @@ fun CustomVideoPlayer(modifier: Modifier = Modifier.statusBarsPadding() , viewMo
     var shouldShowControles by remember { mutableStateOf(true) }
     var isPlaying by remember { mutableStateOf(exoPlayer.isPlaying) }
     var totalDuration by remember { mutableLongStateOf(0L) }
-    //var currentTime by remember { mutableLongStateOf(0L) }
     var bufferedPercentage by remember { mutableIntStateOf(0) }
     var playbackState by remember { mutableStateOf(exoPlayer.playbackState) }
 
@@ -170,27 +175,47 @@ fun CustomVideoPlayer(modifier: Modifier = Modifier.statusBarsPadding() , viewMo
         modifier = Modifier
             .fillMaxSize()
             .background(brush = Brush.verticalGradient(brush))
+            .statusBarsPadding()
     ) {
 
         Box(
             modifier = modifier
                 .fillMaxWidth()
                 .fillMaxHeight(height)
+                .statusBarsPadding()
         ) {
             val listener = object : Player.Listener {
+
                 override fun onEvents(
                     player: Player,
                     events: Player.Events,
                 ) {
+
                     Log.d("logee" , "onEvents called ${player.currentPosition}")
                     super.onEvents(player, events)
                     totalDuration = player.duration.coerceAtLeast(0L)
-                    viewModal.updateCurrentVideoTime(player.currentPosition.coerceAtLeast(0L))
                     bufferedPercentage = player.bufferedPercentage
                     isPlaying = player.isPlaying
                     playbackState = player.playbackState
                 }
+
             }
+
+            if (isPlaying) {
+                LaunchedEffect(Unit) {
+                    while(true) {
+                        viewModal.currentVideoTime.update {
+                            exoPlayer.getCurrentPosition().coerceAtLeast(0L)
+                        }.also {
+                            Log.d("logee" , "----------- inside onEvents called ${exoPlayer.currentPosition}------------------")
+                        }
+                        delay(1.seconds )
+                    }
+                }
+            }
+
+
+
             exoPlayer.addListener(listener)
             DisposableEffect(key1 = Unit) {
                 onDispose {
@@ -201,7 +226,11 @@ fun CustomVideoPlayer(modifier: Modifier = Modifier.statusBarsPadding() , viewMo
             }
             AndroidView(
                 modifier = modifier
-                    .clickable { shouldShowControles = shouldShowControles.not() }
+                    .clickable { shouldShowControles = shouldShowControles.not()
+                        systemUiController.isNavigationBarVisible =  systemUiController.isNavigationBarVisible.not()
+                        systemUiController.isSystemBarsVisible =  systemUiController.isSystemBarsVisible.not()
+                        systemUiController.isSystemBarsVisible = systemUiController.isSystemBarsVisible.not()
+                    }
                     .wrapContentSize(Alignment.Center),
                 factory = {
                     PlayerView(context).apply {
@@ -212,6 +241,7 @@ fun CustomVideoPlayer(modifier: Modifier = Modifier.statusBarsPadding() , viewMo
                                 ViewGroup.LayoutParams.MATCH_PARENT,
                                 ViewGroup.LayoutParams.MATCH_PARENT
                             )
+                        keepScreenOn = true
                     }
                 }
             )
@@ -223,7 +253,6 @@ fun CustomVideoPlayer(modifier: Modifier = Modifier.statusBarsPadding() , viewMo
                     .background(Color.Black.copy(alpha = .5f)),
                 isVisible = { shouldShowControles },
                 isPlaying = {
-                    //  Log.d("video1" , "isPlaying from playerControles : ${isPlaying}")
                     isPlaying
                 },
                 title = { " Episode : ${viewModal.currentEpisode} " },
@@ -249,7 +278,9 @@ fun CustomVideoPlayer(modifier: Modifier = Modifier.statusBarsPadding() , viewMo
                     isPlaying = isPlaying.not()
                 },
                 totalDuration = { totalDuration },
-                currentTime = { 0L },
+                showststatusBar = {
+
+                },
                 bufferedPercentage = { bufferedPercentage },
                 viewModel = viewModal,
                 onSeekChanged = { timeMs: Float ->
@@ -284,8 +315,9 @@ fun CustomVideoPlayer(modifier: Modifier = Modifier.statusBarsPadding() , viewMo
                         .height(height = 55.dp)
                         .background(Vibrant.copy(.5f))
                         .clickable {
-                            playQualityIndex = viewModal.playQuality.indexOf(ep)
-                          //  Log.d("Streaming", URL)
+                           // playQualityIndex = viewModal.playQuality.indexOf(ep)
+                            URL = ep.url
+                            Log.d("Streaming", URL + " from wuility row ")
                         },
 
                     contentAlignment = Alignment.Center,
@@ -314,7 +346,14 @@ fun CustomVideoPlayer(modifier: Modifier = Modifier.statusBarsPadding() , viewMo
         LazyColumn(modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(topStart = 25.dp, topEnd = 25.dp))
-            .background(brush = Brush.verticalGradient(listOf(Vibrant.copy(.5f), Color.Transparent)))
+            .background(
+                brush = Brush.verticalGradient(
+                    listOf(
+                        Vibrant.copy(.5f),
+                        Color.Transparent
+                    )
+                )
+            )
             , contentPadding = PaddingValues(10.dp)
         ) {
             items(viewModal.AnimeEpisodesIDs , key = {it.id}){
@@ -330,7 +369,7 @@ fun CustomVideoPlayer(modifier: Modifier = Modifier.statusBarsPadding() , viewMo
                             color = Color.White,
                             shape = RoundedCornerShape(25.dp)
                         )
-                        .background(if ( ep.number == viewModal.currentEpisode ) VibrantDark.copy(.5f) else Vibrant)
+                        .background(if (ep.number == viewModal.currentEpisode) VibrantDark.copy(.5f) else Vibrant)
                         .clickable {
                             viewModal.updateCurrentEpisode(ep.number)
                             currentEpPlayingID = ep.id
@@ -356,7 +395,7 @@ fun PlayerControles(
     onForwardClick: () -> Unit,
     onPauseToggle: () -> Unit,
     totalDuration: () -> Long,
-    currentTime: () -> Long,
+    showststatusBar: () -> Unit,
     bufferedPercentage: () -> Int,
     playbackState: () -> Int,
     onSeekChanged: (timeMs: Float) -> Unit,
@@ -406,7 +445,6 @@ fun PlayerControles(
                         )
                     ),
                 totalDuration = { totalDuration() },
-                currentTime = {currentTime()},
                 bufferedPercentage = {bufferedPercentage()},
                 onSeekChanged = onSeekChanged,
                 viewModel = viewModel
@@ -480,8 +518,8 @@ fun CenterControles(
 @Composable
 fun TopControles(modifier: Modifier = Modifier , title : () -> String ){
     val videoTitle = remember(title()) { title() }
-    Row (modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start){
-        Text(videoTitle, fontSize = 25.sp , textAlign = TextAlign.Start , color = Color.White)
+    Row (modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center){
+        Text(videoTitle, fontSize = 18.sp , textAlign = TextAlign.Center , color = Color.White)
     }
 }
 
@@ -492,7 +530,6 @@ fun TopControles(modifier: Modifier = Modifier , title : () -> String ){
 fun BottomControles(
     modifier: Modifier = Modifier,
     totalDuration: () -> Long,
-    currentTime: () -> Long,
     bufferedPercentage: () -> Int,
     onSeekChanged: (timeMs: Float) -> Unit,
     viewModel: AniplexViewModal,
@@ -501,7 +538,7 @@ fun BottomControles(
 
     val duration = remember(totalDuration()) { totalDuration() }
 
-    val videoTime by viewModel.debouncedCurrentVideoTime.collectAsState(initial = 0f)
+    val videoTime by viewModel.currentVideoTime.collectAsState(initial = 0f)
 
   //  val buffer = remember(bufferedPercentage()) { bufferedPercentage() }
 
