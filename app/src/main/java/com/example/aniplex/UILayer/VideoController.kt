@@ -10,8 +10,8 @@ import android.net.Uri
 import android.util.Log
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -41,6 +41,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -52,6 +53,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -65,6 +67,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.Player.STATE_BUFFERING
@@ -73,6 +78,7 @@ import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.hls.HlsMediaSource
 import androidx.media3.ui.PlayerView
+import androidx.navigation.NavHostController
 import com.example.aniplex.ViewModal.GetStreamingData
 import com.example.aniplex.ui.theme.Vibrant
 import com.example.aniplex.ui.theme.VibrantDark
@@ -88,7 +94,11 @@ private const val PLAYER_SEEK_BACK_INCREMENT = 10 * 1000L // 10 seconds
 private const val PLAYER_SEEK_FORWARD_INCREMENT = 15 * 1000L // 15 seconds
 @androidx.annotation.OptIn(UnstableApi::class)
 @Composable
-fun CustomVideoPlayer(modifier: Modifier = Modifier , viewModal: AniplexViewModal) {
+fun CustomVideoPlayer(
+    modifier: Modifier = Modifier,
+    viewModal: AniplexViewModal,
+    navController: NavHostController
+) {
 
     var currentEpPlayingID by remember { mutableStateOf(viewModal.AnimeEpisodesIDs[viewModal.currentEpisode].id) }
     //var playQualityIndex by remember { mutableIntStateOf(0) }
@@ -138,6 +148,18 @@ fun CustomVideoPlayer(modifier: Modifier = Modifier , viewModal: AniplexViewModa
         }
     }
 
+    BackHandler {
+
+        viewModal.updateCurrentEpisode(0)
+
+        if(viewModal.isLandscape.value){
+            viewModal.updateOrientation()
+        }else {
+            navController.popBackStack()
+        }
+
+    }
+
 
     val exoPlayer = remember {
         ExoPlayer.Builder(context)
@@ -162,7 +184,16 @@ fun CustomVideoPlayer(modifier: Modifier = Modifier , viewModal: AniplexViewModa
             // Log.d("video1" , "isPlaying from exoplayer launched effect  : ${exoPlayer.isPlaying}")
         }
     }
+    val lifecycleOwner = rememberUpdatedState(LocalLifecycleOwner.current)
 
+    val observer = LifecycleEventObserver { owner, event ->
+        if (event ==  Lifecycle.Event.ON_PAUSE ) {
+            exoPlayer.pause()
+        }
+    }
+
+    val lifecycle = lifecycleOwner.value.lifecycle
+    lifecycle.addObserver(observer)
 
     var shouldShowControles by remember { mutableStateOf(true) }
     var isPlaying by remember { mutableStateOf(exoPlayer.isPlaying) }
@@ -175,14 +206,25 @@ fun CustomVideoPlayer(modifier: Modifier = Modifier , viewModal: AniplexViewModa
         modifier = Modifier
             .fillMaxSize()
             .background(brush = Brush.verticalGradient(brush))
-            .statusBarsPadding()
+            .also {
+                if(viewModal.isLandscape.value){
+                    it.statusBarsPadding()
+                }
+            }
+
+
     ) {
 
         Box(
             modifier = modifier
                 .fillMaxWidth()
-                .fillMaxHeight(height)
-                .statusBarsPadding()
+                .fillMaxHeight(height).also {
+                    if(viewModal.isLandscape.value){
+                        it.statusBarsPadding()
+                    }
+                },
+            contentAlignment = Alignment.BottomCenter
+
         ) {
             val listener = object : Player.Listener {
 
@@ -191,7 +233,7 @@ fun CustomVideoPlayer(modifier: Modifier = Modifier , viewModal: AniplexViewModa
                     events: Player.Events,
                 ) {
 
-                    Log.d("logee" , "onEvents called ${player.currentPosition}")
+                    //Log.d("logee" , "onEvents called ${player.currentPosition}")
                     super.onEvents(player, events)
                     totalDuration = player.duration.coerceAtLeast(0L)
                     bufferedPercentage = player.bufferedPercentage
@@ -206,8 +248,6 @@ fun CustomVideoPlayer(modifier: Modifier = Modifier , viewModal: AniplexViewModa
                     while(true) {
                         viewModal.currentVideoTime.update {
                             exoPlayer.getCurrentPosition().coerceAtLeast(0L)
-                        }.also {
-                            Log.d("logee" , "----------- inside onEvents called ${exoPlayer.currentPosition}------------------")
                         }
                         delay(1.seconds )
                     }
@@ -221,15 +261,23 @@ fun CustomVideoPlayer(modifier: Modifier = Modifier , viewModal: AniplexViewModa
                 onDispose {
                     exoPlayer.removeListener(listener)
                     exoPlayer.release()
-                    //Log.d("viewmodal", "dispose effect called")
+                    lifecycle.removeObserver(observer)
                 }
             }
             AndroidView(
-                modifier = modifier
-                    .clickable { shouldShowControles = shouldShowControles.not()
-                        systemUiController.isNavigationBarVisible =  systemUiController.isNavigationBarVisible.not()
-                        systemUiController.isSystemBarsVisible =  systemUiController.isSystemBarsVisible.not()
-                        systemUiController.isSystemBarsVisible = systemUiController.isSystemBarsVisible.not()
+                modifier = modifier.also {
+                    if(viewModal.isLandscape.value){
+                        it.statusBarsPadding()
+                    }
+                }
+                    .clickable {
+                        shouldShowControles = shouldShowControles.not()
+                        systemUiController.isNavigationBarVisible =
+                            systemUiController.isNavigationBarVisible.not()
+                        systemUiController.isSystemBarsVisible =
+                            systemUiController.isSystemBarsVisible.not()
+                        systemUiController.isSystemBarsVisible =
+                            systemUiController.isSystemBarsVisible.not()
                     }
                     .wrapContentSize(Alignment.Center),
                 factory = {
@@ -250,12 +298,13 @@ fun CustomVideoPlayer(modifier: Modifier = Modifier , viewModal: AniplexViewModa
                 modifier = modifier
                     .fillMaxWidth()
                     .fillMaxHeight()
-                    .background(Color.Black.copy(alpha = .5f)),
+                    .background(Color.Black.copy(alpha = .3f))
+                   ,
                 isVisible = { shouldShowControles },
                 isPlaying = {
                     isPlaying
                 },
-                title = { " Episode : ${viewModal.currentEpisode} " },
+                title = { " Episode : ${viewModal.currentEpisode+1} " },
                 playbackState = { playbackState },
                 onReplayClick = { exoPlayer.seekBack() },
                 onForwardClick = { exoPlayer.seekForward() },
@@ -278,9 +327,6 @@ fun CustomVideoPlayer(modifier: Modifier = Modifier , viewModal: AniplexViewModa
                     isPlaying = isPlaying.not()
                 },
                 totalDuration = { totalDuration },
-                showststatusBar = {
-
-                },
                 bufferedPercentage = { bufferedPercentage },
                 viewModel = viewModal,
                 onSeekChanged = { timeMs: Float ->
@@ -315,9 +361,7 @@ fun CustomVideoPlayer(modifier: Modifier = Modifier , viewModal: AniplexViewModa
                         .height(height = 55.dp)
                         .background(Vibrant.copy(.5f))
                         .clickable {
-                           // playQualityIndex = viewModal.playQuality.indexOf(ep)
                             URL = ep.url
-                            Log.d("Streaming", URL + " from wuility row ")
                         },
 
                     contentAlignment = Alignment.Center,
@@ -369,8 +413,13 @@ fun CustomVideoPlayer(modifier: Modifier = Modifier , viewModal: AniplexViewModa
                             color = Color.White,
                             shape = RoundedCornerShape(25.dp)
                         )
-                        .background(if (ep.number == viewModal.currentEpisode) VibrantDark.copy(.5f) else Vibrant)
+                        .background(
+                            if (ep.number - 1 == viewModal.currentEpisode) VibrantDark.copy(
+                                .5f
+                            ) else Vibrant
+                        )
                         .clickable {
+                            Log.d("ep", "ep id : ${ep.number}")
                             viewModal.updateCurrentEpisode(ep.number)
                             currentEpPlayingID = ep.id
                         },
@@ -384,7 +433,6 @@ fun CustomVideoPlayer(modifier: Modifier = Modifier , viewModal: AniplexViewModa
     }
 }
 
-@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun PlayerControles(
     modifier: Modifier = Modifier,
@@ -395,7 +443,6 @@ fun PlayerControles(
     onForwardClick: () -> Unit,
     onPauseToggle: () -> Unit,
     totalDuration: () -> Long,
-    showststatusBar: () -> Unit,
     bufferedPercentage: () -> Int,
     playbackState: () -> Int,
     onSeekChanged: (timeMs: Float) -> Unit,
@@ -518,8 +565,8 @@ fun CenterControles(
 @Composable
 fun TopControles(modifier: Modifier = Modifier , title : () -> String ){
     val videoTitle = remember(title()) { title() }
-    Row (modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center){
-        Text(videoTitle, fontSize = 18.sp , textAlign = TextAlign.Center , color = Color.White)
+    Row (modifier = modifier.fillMaxWidth().statusBarsPadding(), horizontalArrangement = Arrangement.Center){
+        Text(videoTitle, fontSize = 15.sp , textAlign = TextAlign.Center , color = Color.White)
     }
 }
 
@@ -539,6 +586,7 @@ fun BottomControles(
     val duration = remember(totalDuration()) { totalDuration() }
 
     val videoTime by viewModel.currentVideoTime.collectAsState(initial = 0f)
+
 
   //  val buffer = remember(bufferedPercentage()) { bufferedPercentage() }
 
@@ -561,12 +609,20 @@ fun BottomControles(
 
             Slider(
                 modifier = Modifier
-                    .padding(start = 10.dp, end = 10.dp)
+                    .padding(start = 15.dp, end = 15.dp)
                     .fillMaxWidth(),
                 value = videoTime.toFloat(),
-                onValueChange = onSeekChanged,
+                onValueChange = {
+                    onSeekChanged(it)
+                   viewModel.updateCurrentVideoTime(it.toLong())
+                                },
                 valueRange = 0f..duration.toFloat(),
-
+                colors = SliderDefaults.colors(
+                    thumbColor = Color.White,
+                    activeTrackColor = Color.White,
+                    activeTickColor = Color.White,
+                    inactiveTickColor = Color.White
+                )
             )
         }
 

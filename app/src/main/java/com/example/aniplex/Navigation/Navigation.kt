@@ -11,7 +11,6 @@ import com.example.aniplex.UILayer.CustomVideoPlayer
 import com.example.aniplex.UILayer.DetailScreen
 import com.example.aniplex.UILayer.HomeScreen
 import com.example.aniplex.UILayer.SearchScreen
-import com.example.aniplex.UILayer.VideoPlayer
 import com.example.aniplex.ViewModal.AniplexViewModal
 
 @Composable
@@ -38,7 +37,7 @@ fun Navigation( viewModal: AniplexViewModal){
         }
 
         composable(route= NavigationRoutes.VIDEOPLAYER_SCREEN.toString()){
-            CustomVideoPlayer(modifier = Modifier,viewModal)
+            CustomVideoPlayer(modifier = Modifier,viewModal, navController)
         }
         composable(route = NavigationRoutes.SEARCH_SCREEN.toString() ) {
             SearchScreen(viewModal,navController)
