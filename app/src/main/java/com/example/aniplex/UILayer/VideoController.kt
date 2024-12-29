@@ -150,11 +150,13 @@ fun CustomVideoPlayer(
 
     BackHandler {
 
+        viewModal.playQuality[0].url = ""
+
         viewModal.updateCurrentEpisode(0)
 
         if(viewModal.isLandscape.value){
             viewModal.updateOrientation()
-        }else {
+        } else {
             navController.popBackStack()
         }
 

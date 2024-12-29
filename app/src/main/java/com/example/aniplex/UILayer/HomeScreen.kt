@@ -64,6 +64,7 @@ import com.example.aniplex.Navigation.NavigationRoutes
 import com.example.aniplex.R
 import com.example.aniplex.RoomDb.Favourite
 import com.example.aniplex.ViewModal.AniplexViewModal
+import com.example.aniplex.ViewModal.GetAnimeInfo
 import com.example.aniplex.ViewModal.GetQuote
 import com.example.aniplex.ViewModal.GetRecentEpisodes
 import com.example.aniplex.ViewModal.GetTopAirings
@@ -246,8 +247,10 @@ fun HomeScreen(AniplexViewModal: AniplexViewModal, navController: NavHostControl
                                 ) {
                                 items(items = (AniplexViewModal.recentEpisodes as GetRecentEpisodes.Success).data.results) { data ->
                                     NewAnimeCard(data) {
-                                        AniplexViewModal.currentEpisode = data.episodeNumber-1
+                                        AniplexViewModal.   currentEpisode = data.episodeNumber-1
                                         navController.navigate(NavigationRoutes.DETAIL_SCREEN.toString() + "/$it" + "?isFavScreen=${false}")
+                                        AniplexViewModal.AnimeInfo = GetAnimeInfo.Loading
+                                        AniplexViewModal.getAnimeInfo(it!!)
                                     }
                                 }
                             }
@@ -326,6 +329,9 @@ fun HomeScreen(AniplexViewModal: AniplexViewModal, navController: NavHostControl
 
                                     AnimeCard(DATA) { id, isFavScreen ->
                                         navController.navigate(NavigationRoutes.DETAIL_SCREEN.toString() + "/$id" + "?isFavScreen=${false}")
+                                        // call the method for getting anime info
+                                        AniplexViewModal.AnimeInfo = GetAnimeInfo.Loading
+                                        AniplexViewModal.getAnimeInfo(id!!)
                                     }
                                 }
                             }
