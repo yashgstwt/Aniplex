@@ -1,8 +1,6 @@
 package com.example.aniplex.UILayer
 
 import android.graphics.Bitmap
-import android.util.Log
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -69,16 +67,17 @@ fun DetailScreen(
     isFavScreen: Boolean? = false,
 ) {
 
-    LaunchedEffect(key1 = Unit ) {
-        viewModal.AnimeInfo = GetAnimeInfo.Loading
-        viewModal.getAnimeInfo(animeId!!)
-    }
+//    LaunchedEffect(key1 = Unit ) {
+//        viewModal.AnimeInfo = GetAnimeInfo.Loading
+//        viewModal.getAnimeInfo(animeId!!)
+//    }
 
     when (viewModal.AnimeInfo) {
         is GetAnimeInfo.Success -> {
             var animeInfo: AnimeInfo =  (viewModal.AnimeInfo as GetAnimeInfo.Success).animeInfo
             viewModal.AnimeEpisodesIDs = animeInfo.episodes
             DetailScreenUi(animeInfo, navController, viewModal , isFavScreen)
+         //   Log.d("detailScreen" , "AnimeInfo is Success")
         }
 
         is GetAnimeInfo.Error -> {
@@ -86,9 +85,9 @@ fun DetailScreen(
         }
         is  GetAnimeInfo.Loading -> {
             FullLoadingScreen()
+           // Log.d("detailScreen" , "AnimeInfo is Loading")
         }
     }
-
 }
 
 @Composable
@@ -101,7 +100,7 @@ fun DetailScreenUi(
     var darkVibrant by remember { mutableStateOf(gradiantColor) }
     var vibrant by remember { mutableStateOf(Color.LightGray) }
 
-    var brush: List<Color> = listOf(darkVibrant,black)
+    val brush: List<Color> = listOf(darkVibrant,black)
     var imageBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var palette:Palette? = null
 
@@ -234,7 +233,6 @@ fun DetailScreenUi(
                         tint = favColor
                     )
                 }
-
             }
 
             Text("Genera", fontSize = 20.sp, color = Color.White, fontFamily = FontFamily.Serif)

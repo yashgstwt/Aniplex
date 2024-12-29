@@ -64,7 +64,7 @@ import com.google.accompanist.systemuicontroller.SystemUiController
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 
 
-
+// old video player
 @OptIn(UnstableApi::class)
 @Composable
 fun VideoPlayer(viewModal: AniplexViewModal) {
