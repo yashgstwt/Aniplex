@@ -112,7 +112,7 @@ fun HomeScreen(AniplexViewModal: AniplexViewModal, navController: NavHostControl
                 Spacer(modifier = Modifier.displayCutoutPadding())
                 Box(
                     modifier = Modifier.fillMaxWidth().padding(end = 10.dp).clip(RoundedCornerShape(25.dp))
-                        .border(2.dp, color = Color.White, shape = RoundedCornerShape(25.dp))
+                        .border(1.dp, color = Color.White, shape = RoundedCornerShape(25.dp))
                 ) {
                     Image(
                         painter = painterResource(R.drawable.mochuro),
@@ -148,7 +148,7 @@ fun HomeScreen(AniplexViewModal: AniplexViewModal, navController: NavHostControl
                         .padding(top = 10.dp, end = 10.dp)
                         .fillMaxWidth()
                         .height(200.dp)
-                        .border(2.dp, color = Color.White, shape = RoundedCornerShape(25.dp))
+                        .border(1.dp, color = Color.White, shape = RoundedCornerShape(25.dp))
                         .clip(shape = RoundedCornerShape(25.dp))
                         .background(Color.DarkGray)
                     ){
@@ -322,7 +322,7 @@ fun HomeScreen(AniplexViewModal: AniplexViewModal, navController: NavHostControl
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.Center
                             ) {
-                                items((AniplexViewModal.topAirings as GetTopAirings.Success).airings.results) { DATA ->
+                                items((AniplexViewModal.topAirings as GetTopAirings.Success).airings.results, ) { DATA ->
 
                                     AnimeCard(DATA) { id, isFavScreen ->
                                         navController.navigate(NavigationRoutes.DETAIL_SCREEN.toString() + "/$id" + "?isFavScreen=${false}")
@@ -385,7 +385,7 @@ fun HomeScreen(AniplexViewModal: AniplexViewModal, navController: NavHostControl
         Box(
             modifier = Modifier
                 .padding(start = 5.dp, end = 5.dp)
-                .border(width = 2.dp, color = Color.White, shape = RoundedCornerShape(25.dp))
+                .border(width = 1.dp, color = Color.White, shape = RoundedCornerShape(25.dp))
                 .clip(RoundedCornerShape(25.dp))
                 .size(140.dp, 200.dp)
                 .clickable {
@@ -449,7 +449,7 @@ fun HomeScreen(AniplexViewModal: AniplexViewModal, navController: NavHostControl
     ) {
         Box(
             modifier = Modifier.padding(5.dp)
-                .border(width = 2.dp, color = Color.White, shape = RoundedCornerShape(25.dp))
+                .border(width = 1.dp, color = Color.White, shape = RoundedCornerShape(25.dp))
                 .clip(RoundedCornerShape(25.dp))
                 .size(140.dp, 200.dp).clickable {
                     OnClick(result.id, false)
@@ -496,7 +496,7 @@ fun HomeScreen(AniplexViewModal: AniplexViewModal, navController: NavHostControl
         Box(
             modifier = Modifier
                 .padding(start = 5.dp, end = 5.dp)
-                .border(width = 2.dp, color = Color.White, shape = RoundedCornerShape(25.dp))
+                .border(width = 1.dp, color = Color.White, shape = RoundedCornerShape(25.dp))
                 .clip(RoundedCornerShape(25.dp))
                 .size(140.dp, 200.dp)
                 .clickable {
