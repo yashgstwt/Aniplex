@@ -55,6 +55,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.media3.common.util.UnstableApi
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.example.aniplex.DataLayer.aniplexApi.Result
@@ -77,6 +78,7 @@ import kotlinx.coroutines.launch
 import javax.annotation.meta.When
 
 
+@androidx.annotation.OptIn(UnstableApi::class)
 @Composable
 fun HomeScreen(AniplexViewModal: AniplexViewModal, navController: NavHostController) {
 
@@ -95,7 +97,7 @@ fun HomeScreen(AniplexViewModal: AniplexViewModal, navController: NavHostControl
 
     Scaffold(floatingActionButton = {
         FloatingActionButton(onClick = {navController.navigate(NavigationRoutes.SEARCH_SCREEN.toString())} , containerColor = gradiantColor, contentColor = Color.White) {
-            Icon(imageVector = Icons.Default.Search, contentDescription = "Add" , tint = Color.White , )
+            Icon(imageVector = Icons.Default.Search, contentDescription = "Add", tint = Color.White)
         }
     }) { padding ->
 
@@ -325,7 +327,7 @@ fun HomeScreen(AniplexViewModal: AniplexViewModal, navController: NavHostControl
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.Center
                             ) {
-                                items((AniplexViewModal.topAirings as GetTopAirings.Success).airings.results, ) { DATA ->
+                                items((AniplexViewModal.topAirings as GetTopAirings.Success).airings.results) { DATA ->
 
                                     AnimeCard(DATA) { id, isFavScreen ->
                                         navController.navigate(NavigationRoutes.DETAIL_SCREEN.toString() + "/$id" + "?isFavScreen=${false}")
@@ -451,7 +453,7 @@ fun HomeScreen(AniplexViewModal: AniplexViewModal, navController: NavHostControl
     @Composable
     fun AnimeCard(
         result: ResultX,
-        OnClick: (id: String, isFavScreen: Boolean) -> Unit = { s: String, b: Boolean -> }
+        OnClick: (id: String, isFavScreen: Boolean) -> Unit = { s: String, b: Boolean -> },
     ) {
         Box(
             modifier = Modifier.padding(5.dp)
@@ -497,7 +499,7 @@ fun HomeScreen(AniplexViewModal: AniplexViewModal, navController: NavHostControl
         name: String,
         imgUrl: String,
         dubOrSub: String,
-        OnClick: (id: String, isFavScreen: Boolean) -> Unit
+        OnClick: (id: String, isFavScreen: Boolean) -> Unit,
     ) {
         Box(
             modifier = Modifier
