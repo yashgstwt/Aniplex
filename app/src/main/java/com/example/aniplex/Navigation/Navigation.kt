@@ -1,7 +1,9 @@
 package com.example.aniplex.Navigation
 
+import androidx.annotation.OptIn
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.media3.common.util.UnstableApi
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -13,6 +15,7 @@ import com.example.aniplex.UILayer.HomeScreen
 import com.example.aniplex.UILayer.SearchScreen
 import com.example.aniplex.ViewModal.AniplexViewModal
 
+@OptIn(UnstableApi::class)
 @Composable
 fun Navigation( viewModal: AniplexViewModal){
 

@@ -1,0 +1,400 @@
+Index: app/src/main/java/com/example/aniplex/ViewModal/AniplexViewModal.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package com.example.aniplex.ViewModal\r\n\r\n\r\nimport android.util.Log\r\nimport androidx.compose.runtime.getValue\r\nimport androidx.compose.runtime.mutableIntStateOf\r\nimport androidx.compose.runtime.mutableStateOf\r\nimport androidx.compose.runtime.setValue\r\nimport androidx.lifecycle.ViewModel\r\nimport androidx.lifecycle.viewModelScope\r\nimport com.example.aniplex.DataLayer.QuoteApi.RandomQuote\r\nimport com.example.aniplex.DataLayer.aniplexApi.Episode\r\nimport com.example.aniplex.DataLayer.aniplexApi.Source\r\nimport com.example.aniplex.Repository.AniplexRepo\r\nimport com.example.aniplex.Repository.QuoteRepo\r\nimport com.example.aniplex.Repository.RoomDBRepo\r\nimport dagger.hilt.android.lifecycle.HiltViewModel\r\nimport kotlinx.coroutines.CoroutineScope\r\nimport kotlinx.coroutines.Dispatchers\r\nimport kotlinx.coroutines.FlowPreview\r\nimport kotlinx.coroutines.delay\r\nimport kotlinx.coroutines.flow.MutableSharedFlow\r\nimport kotlinx.coroutines.flow.MutableStateFlow\r\nimport kotlinx.coroutines.flow.StateFlow\r\nimport kotlinx.coroutines.flow.asStateFlow\r\nimport kotlinx.coroutines.flow.debounce\r\nimport kotlinx.coroutines.flow.update\r\nimport kotlinx.coroutines.launch\r\nimport kotlinx.coroutines.time.debounce\r\nimport kotlinx.coroutines.withContext\r\nimport retrofit2.HttpException\r\nimport javax.inject.Inject\r\nimport kotlin.math.log\r\n\r\n\r\n@HiltViewModel\r\nclass AniplexViewModal @Inject constructor( private val repo : AniplexRepo ,  val db : RoomDBRepo , val quoteRepo: QuoteRepo) : ViewModel() {\r\n\r\n    var AnimeInfo : GetAnimeInfo by mutableStateOf(GetAnimeInfo.Loading)\r\n\r\n\r\n    var topAirings : GetTopAirings by mutableStateOf(GetTopAirings.Loading)\r\n    private set\r\n\r\n    var StreamingLink : GetStreamingData by mutableStateOf(GetStreamingData.Loading)\r\n    private set\r\n\r\n    var recentEpisodes : GetRecentEpisodes by mutableStateOf(GetRecentEpisodes.Loading)\r\n    private set\r\n\r\n    var quote: GetQuote by mutableStateOf(GetQuote.Loading)\r\n\r\n    var search : GetSearch by mutableStateOf(GetSearch.Loading)\r\n\r\n    var AnimeEpisodesIDs : List<Episode> by mutableStateOf(emptyList<Episode>())\r\n\r\n    var playQuality:List<Source> = listOf( Source(false,\"Loading..\",\"\"))\r\n\r\n    var playbackServer : String by mutableStateOf(\"gogocdn\")\r\n\r\n    var topAiringsPage:Int by mutableIntStateOf(1)\r\n\r\n    var recentReleasedPage:Int by mutableIntStateOf(1)\r\n\r\n    var currentEpisode by mutableIntStateOf(0)\r\n\r\n\r\n    fun updateCurrentEpisode(ep:Int){\r\n        currentEpisode = ep\r\n    }\r\n\r\n\r\n    val currentVideoTime = MutableStateFlow<Long>( 0)\r\n\r\n\r\n    fun updateCurrentVideoTime(time:Long){\r\n        CoroutineScope(Dispatchers.IO).launch{\r\n            currentVideoTime.emit(time).also {\r\n                Log.d(\"video1\" , \"currentVideoTime : $time\")\r\n            }\r\n            delay(1000)\r\n        }\r\n    }\r\n\r\n\r\n    init {\r\n        viewModelScope.launch {\r\n            getQuote()\r\n            getRecentEpisode()\r\n            getTopAirings(topAiringsPage)\r\n        }\r\n    }\r\n\r\n    fun getTopAirings(page:Int = 1){\r\n        viewModelScope.launch {\r\n            topAirings= try {\r\n                GetTopAirings.Success(repo.getTopAirings(page))\r\n            }catch(e:Exception){\r\n                GetTopAirings.Error(e.toString())\r\n            }\r\n        }\r\n    }\r\n\r\n\r\n    fun getStreamingLink(animeId: String, server: String) {\r\n        viewModelScope.launch {\r\n            StreamingLink = try {\r\n                GetStreamingData.Success(repo.getStreamingLink(animeId, server))\r\n            }catch (e:Exception){\r\n                GetStreamingData.Error(e.toString())\r\n            }\r\n        }\r\n    }\r\n\r\n\r\n    fun getRecentEpisode(page:Int = 1 , DubSub:Int = 2){\r\n        viewModelScope.launch {\r\n            recentEpisodes = try {\r\n                GetRecentEpisodes.Success(repo.getRecentEpisodes(page,DubSub))\r\n            }catch (e:Exception){\r\n                GetRecentEpisodes.Error(e)\r\n            }catch (e: HttpException){\r\n                GetRecentEpisodes.Error(e)\r\n            }\r\n        }\r\n    }\r\n\r\n\r\n    fun getAnimeInfo(AnimeId : String ){\r\n        CoroutineScope(Dispatchers.IO).launch {\r\n            AnimeInfo = try {\r\n                GetAnimeInfo.Success(repo.getAnimeInfo(AnimeId ?: \"\"))\r\n\r\n            }catch (e:Exception){\r\n                GetAnimeInfo.Error(e)\r\n            }catch (e: HttpException){\r\n                GetAnimeInfo.Error(e)\r\n            }\r\n        }\r\n    }\r\n\r\n    fun insertFav(id:String , name:String ,imgUrl :String ,dubOrSub:String ){\r\n        CoroutineScope(Dispatchers.IO).launch {\r\n            db.addFavouriteAnime(id,name,imgUrl,dubOrSub)\r\n        }\r\n    }\r\n    fun DeleteFav(id:String  ){\r\n        CoroutineScope(Dispatchers.IO).launch {\r\n            db.deleteFavAnime(id)\r\n        }\r\n    }\r\n    suspend fun isFavourite(id: String): Boolean = withContext(Dispatchers.IO) { // used to check for a particular anime is saved to favourite section (room db)\r\n        db.isFavourite(id)\r\n    }\r\n    fun getSearch(name:String , pages:Int = 1){\r\n       viewModelScope.launch {\r\n           search =  try {\r\n            GetSearch.Success(repo.getSearchResult(name, pages))\r\n\r\n           } catch (e:Exception){\r\n              GetSearch.ERROR(e.toString())\r\n           }\r\n        }\r\n    }\r\n\r\n    fun getQuote(){\r\n        CoroutineScope(Dispatchers.IO).launch{\r\n        quote = try {\r\n            GetQuote.Success(quoteRepo.getRandomQuote())\r\n        }catch (e:Exception){\r\n            GetQuote.Error(e.toString())\r\n            }\r\n        }\r\n    }\r\n\r\n    private val _isLandscape = MutableStateFlow(false )\r\n    val isLandscape: StateFlow<Boolean> = _isLandscape.asStateFlow().also {\r\n        Log.d(\"viewmodal\", \" from val _isLandscape ${_isLandscape.value}\")\r\n    }\r\n\r\n    fun getIsLandscape(): Boolean {\r\n        return _isLandscape.value\r\n    }\r\n    fun updateOrientation() {\r\n        _isLandscape.update { _isLandscape.value.not() }.also {\r\n            Log.d(\"viewmodal\", \"updateOrientation called : ${_isLandscape.value}\")\r\n        }\r\n    }\r\n}\r\n\r\n\r\n\r\n//2024-10-06 00:20:57.673 30717-30717 DetailScreen            com.example.aniplex                  D   AnimeInfo(description=Based on a picture book written about the 2004 earthquake in Chuuetsu, Niigata prefecture.\r\n//\r\n//                                                                                                    Mari's three puppies were just born, when the earthquake in Yamakoshimura started. Now their home is in ruins, and their owner, an old man is trapped under the debris. Mari somehow manages to break her chain, and encourages the old man, until help arrives. In the end, someone saves the old man, but he can't take in the dogs, so they remain in the now abandoned village. Can Mari and the puppies live on like this?, episodes=[Episode(id=yamakoshi-mura-no-mari-to-sanbiki-no-koinu-dub-episode-1, number=1, url=https://anitaku.pe//yamakoshi-mura-no-mari-to-sanbiki-no-koinu-dub-episode-1)], genres=[Drama, Kids], id=yamakoshi-mura-no-mari-to-sanbiki-no-koinu-dub, image=https://gogocdn.net/cover/yamakoshi-mura-no-mari-to-sanbiki-no-koinu-dub.png, otherName=Yamakoshi-mura no Mari to Sanbiki no Koinu, Yamakoshi Mura no Mari to San-biki no Koinu, 山古志村のマリと三匹の子犬, releaseDate=2006, status=Completed, subOrDub=dub, title=Yamakoshi Mura no Mari to Sanbiki no Koinu (Dub), totalEpisodes=1, type=OVA, url=https://anitaku.pe/category/yamakoshi-mura-no-mari-to-sanbiki-no-koinu-dub)\r\n//2024-10-06 00:20:57.673 30717-30717 DetailScreen            com.example.aniplex                  D   https://anitaku.pe/category/yamakoshi-mura-no-mari-to-sanbiki-no-koinu-dub
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/example/aniplex/ViewModal/AniplexViewModal.kt b/app/src/main/java/com/example/aniplex/ViewModal/AniplexViewModal.kt
+--- a/app/src/main/java/com/example/aniplex/ViewModal/AniplexViewModal.kt	(revision 1b9548eef0aa7e36aa7ce659dc0342bef3a9c464)
++++ b/app/src/main/java/com/example/aniplex/ViewModal/AniplexViewModal.kt	(date 1735587572588)
+@@ -1,6 +1,7 @@
+ package com.example.aniplex.ViewModal
+ 
+ 
++import android.app.Application
+ import android.util.Log
+ import androidx.compose.runtime.getValue
+ import androidx.compose.runtime.mutableIntStateOf
+@@ -8,33 +9,32 @@
+ import androidx.compose.runtime.setValue
+ import androidx.lifecycle.ViewModel
+ import androidx.lifecycle.viewModelScope
+-import com.example.aniplex.DataLayer.QuoteApi.RandomQuote
++import androidx.media3.common.util.UnstableApi
++import androidx.media3.exoplayer.ExoPlayer
+ import com.example.aniplex.DataLayer.aniplexApi.Episode
+ import com.example.aniplex.DataLayer.aniplexApi.Source
+ import com.example.aniplex.Repository.AniplexRepo
+ import com.example.aniplex.Repository.QuoteRepo
+ import com.example.aniplex.Repository.RoomDBRepo
++import com.example.aniplex.UILayer.PLAYER_SEEK_BACK_INCREMENT
++import com.example.aniplex.UILayer.PLAYER_SEEK_FORWARD_INCREMENT
+ import dagger.hilt.android.lifecycle.HiltViewModel
+ import kotlinx.coroutines.CoroutineScope
+ import kotlinx.coroutines.Dispatchers
+-import kotlinx.coroutines.FlowPreview
+ import kotlinx.coroutines.delay
+-import kotlinx.coroutines.flow.MutableSharedFlow
+ import kotlinx.coroutines.flow.MutableStateFlow
+ import kotlinx.coroutines.flow.StateFlow
+ import kotlinx.coroutines.flow.asStateFlow
+-import kotlinx.coroutines.flow.debounce
+ import kotlinx.coroutines.flow.update
+ import kotlinx.coroutines.launch
+-import kotlinx.coroutines.time.debounce
+ import kotlinx.coroutines.withContext
+ import retrofit2.HttpException
+ import javax.inject.Inject
+-import kotlin.math.log
+ 
+ 
++@UnstableApi
+ @HiltViewModel
+-class AniplexViewModal @Inject constructor( private val repo : AniplexRepo ,  val db : RoomDBRepo , val quoteRepo: QuoteRepo) : ViewModel() {
++class AniplexViewModal @Inject constructor( private val repo : AniplexRepo ,  val db : RoomDBRepo , val quoteRepo: QuoteRepo, val app: Application) : ViewModel() {
+ 
+     var AnimeInfo : GetAnimeInfo by mutableStateOf(GetAnimeInfo.Loading)
+ 
+@@ -186,11 +186,16 @@
+             Log.d("viewmodal", "updateOrientation called : ${_isLandscape.value}")
+         }
+     }
+-}
+ 
++    val exoPlayer =
++        ExoPlayer.Builder(app).also {
++            it.setSeekBackIncrementMs(PLAYER_SEEK_BACK_INCREMENT)
++            it.setSeekForwardIncrementMs(PLAYER_SEEK_FORWARD_INCREMENT)
++        }.build()
+ 
++    override fun onCleared() {
++        super.onCleared()
++        exoPlayer.release()
++    }
+ 
+-//2024-10-06 00:20:57.673 30717-30717 DetailScreen            com.example.aniplex                  D   AnimeInfo(description=Based on a picture book written about the 2004 earthquake in Chuuetsu, Niigata prefecture.
+-//
+-//                                                                                                    Mari's three puppies were just born, when the earthquake in Yamakoshimura started. Now their home is in ruins, and their owner, an old man is trapped under the debris. Mari somehow manages to break her chain, and encourages the old man, until help arrives. In the end, someone saves the old man, but he can't take in the dogs, so they remain in the now abandoned village. Can Mari and the puppies live on like this?, episodes=[Episode(id=yamakoshi-mura-no-mari-to-sanbiki-no-koinu-dub-episode-1, number=1, url=https://anitaku.pe//yamakoshi-mura-no-mari-to-sanbiki-no-koinu-dub-episode-1)], genres=[Drama, Kids], id=yamakoshi-mura-no-mari-to-sanbiki-no-koinu-dub, image=https://gogocdn.net/cover/yamakoshi-mura-no-mari-to-sanbiki-no-koinu-dub.png, otherName=Yamakoshi-mura no Mari to Sanbiki no Koinu, Yamakoshi Mura no Mari to San-biki no Koinu, 山古志村のマリと三匹の子犬, releaseDate=2006, status=Completed, subOrDub=dub, title=Yamakoshi Mura no Mari to Sanbiki no Koinu (Dub), totalEpisodes=1, type=OVA, url=https://anitaku.pe/category/yamakoshi-mura-no-mari-to-sanbiki-no-koinu-dub)
+-//2024-10-06 00:20:57.673 30717-30717 DetailScreen            com.example.aniplex                  D   https://anitaku.pe/category/yamakoshi-mura-no-mari-to-sanbiki-no-koinu-dub
+\ No newline at end of file
++}
+Index: app/src/main/java/com/example/aniplex/UILayer/VideoController.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package com.example.aniplex.UILayer\r\n\r\nimport com.example.aniplex.R\r\nimport com.example.aniplex.ViewModal.AniplexViewModal\r\nimport android.annotation.SuppressLint\r\nimport android.app.Activity\r\nimport android.content.pm.ActivityInfo\r\nimport android.media.metrics.PlaybackStateEvent.STATE_ENDED\r\nimport android.net.Uri\r\nimport android.util.Log\r\nimport android.view.ViewGroup\r\nimport android.widget.FrameLayout\r\nimport androidx.activity.compose.BackHandler\r\nimport androidx.compose.animation.AnimatedVisibility\r\nimport androidx.compose.animation.fadeIn\r\nimport androidx.compose.animation.fadeOut\r\nimport androidx.compose.animation.slideInVertically\r\nimport androidx.compose.animation.slideOutVertically\r\nimport androidx.compose.foundation.background\r\nimport androidx.compose.foundation.border\r\nimport androidx.compose.foundation.clickable\r\nimport androidx.compose.foundation.layout.Arrangement\r\nimport androidx.compose.foundation.layout.Box\r\nimport androidx.compose.foundation.layout.Column\r\nimport androidx.compose.foundation.layout.PaddingValues\r\nimport androidx.compose.foundation.layout.Row\r\nimport androidx.compose.foundation.layout.fillMaxHeight\r\nimport androidx.compose.foundation.layout.fillMaxSize\r\nimport androidx.compose.foundation.layout.fillMaxWidth\r\nimport androidx.compose.foundation.layout.height\r\nimport androidx.compose.foundation.layout.padding\r\nimport androidx.compose.foundation.layout.size\r\nimport androidx.compose.foundation.layout.statusBarsPadding\r\nimport androidx.compose.foundation.layout.wrapContentSize\r\nimport androidx.compose.foundation.lazy.LazyColumn\r\nimport androidx.compose.foundation.lazy.LazyRow\r\nimport androidx.compose.foundation.lazy.items\r\nimport androidx.compose.foundation.shape.RoundedCornerShape\r\nimport androidx.compose.material3.CircularProgressIndicator\r\nimport androidx.compose.material3.ExperimentalMaterial3Api\r\nimport androidx.compose.material3.Icon\r\nimport androidx.compose.material3.IconButton\r\nimport androidx.compose.material3.Slider\r\nimport androidx.compose.material3.SliderDefaults\r\nimport androidx.compose.material3.Text\r\nimport androidx.compose.runtime.Composable\r\nimport androidx.compose.runtime.DisposableEffect\r\nimport androidx.compose.runtime.LaunchedEffect\r\nimport androidx.compose.runtime.collectAsState\r\nimport androidx.compose.runtime.getValue\r\nimport androidx.compose.runtime.mutableFloatStateOf\r\nimport androidx.compose.runtime.mutableIntStateOf\r\nimport androidx.compose.runtime.mutableLongStateOf\r\nimport androidx.compose.runtime.mutableStateOf\r\nimport androidx.compose.runtime.remember\r\nimport androidx.compose.runtime.rememberUpdatedState\r\nimport androidx.compose.runtime.setValue\r\nimport androidx.compose.ui.Alignment\r\nimport androidx.compose.ui.Modifier\r\nimport androidx.compose.ui.draw.clip\r\nimport androidx.compose.ui.graphics.Brush\r\nimport androidx.compose.ui.graphics.Color\r\nimport androidx.compose.ui.platform.LocalConfiguration\r\nimport androidx.compose.ui.platform.LocalContext\r\nimport androidx.compose.ui.res.painterResource\r\nimport androidx.compose.ui.text.style.TextAlign\r\nimport androidx.compose.ui.unit.dp\r\nimport androidx.compose.ui.unit.sp\r\nimport androidx.compose.ui.viewinterop.AndroidView\r\nimport androidx.lifecycle.Lifecycle\r\nimport androidx.lifecycle.LifecycleEventObserver\r\nimport androidx.lifecycle.compose.LocalLifecycleOwner\r\nimport androidx.media3.common.MediaItem\r\nimport androidx.media3.common.Player\r\nimport androidx.media3.common.Player.STATE_BUFFERING\r\nimport androidx.media3.common.util.UnstableApi\r\nimport androidx.media3.datasource.DefaultHttpDataSource\r\nimport androidx.media3.exoplayer.ExoPlayer\r\nimport androidx.media3.exoplayer.hls.HlsMediaSource\r\nimport androidx.media3.ui.PlayerView\r\nimport androidx.navigation.NavHostController\r\nimport com.example.aniplex.ViewModal.GetStreamingData\r\nimport com.example.aniplex.ui.theme.Vibrant\r\nimport com.example.aniplex.ui.theme.VibrantDark\r\nimport com.example.aniplex.ui.theme.black\r\nimport com.google.accompanist.systemuicontroller.SystemUiController\r\nimport com.google.accompanist.systemuicontroller.rememberSystemUiController\r\nimport kotlinx.coroutines.delay\r\nimport kotlinx.coroutines.flow.update\r\nimport java.util.concurrent.TimeUnit\r\nimport kotlin.time.Duration.Companion.seconds\r\n\r\nprivate const val PLAYER_SEEK_BACK_INCREMENT = 10 * 1000L // 10 seconds\r\nprivate const val PLAYER_SEEK_FORWARD_INCREMENT = 15 * 1000L // 15 seconds\r\n@androidx.annotation.OptIn(UnstableApi::class)\r\n@Composable\r\nfun CustomVideoPlayer(\r\n    modifier: Modifier = Modifier,\r\n    viewModal: AniplexViewModal,\r\n    navController: NavHostController\r\n) {\r\n\r\n    var currentEpPlayingID by remember { mutableStateOf(viewModal.AnimeEpisodesIDs[viewModal.currentEpisode].id) }\r\n    //var playQualityIndex by remember { mutableIntStateOf(0) }\r\n    var URL by remember { mutableStateOf(viewModal.playQuality[0].url) }\r\n\r\n    // Log.d(\"Streaming\" ,\"hay\" +currentEpPlaying)\r\n    // method to get streaming link from episode id  i.e from currentEpPlaying\r\n\r\n    LaunchedEffect (currentEpPlayingID){\r\n        viewModal.getStreamingLink(currentEpPlayingID, viewModal.playbackServer)\r\n    }\r\n\r\n\r\n    val systemUiController: SystemUiController = rememberSystemUiController()\r\n    val context = LocalContext.current\r\n    val activity = context as? Activity\r\n    var height by remember { mutableFloatStateOf(.3f) }\r\n\r\n    LaunchedEffect(viewModal.isLandscape.collectAsState().value, LocalConfiguration.current) {\r\n        // Log.d(\"viewmodal\", viewModel.getIsLandscape().toString() + \" from launched effect \")\r\n\r\n        if (viewModal.getIsLandscape()) {\r\n            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE\r\n            height = 1f\r\n\r\n            // Log.d(\"viewmodal\", \" if block : $height from launched effect ${viewModel.getIsLandscape()}\")\r\n        } else {\r\n            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT\r\n            height = .31f\r\n            // Log.d(\"viewmodal\", \" else block : $height from launched effect ${viewModel.getIsLandscape()}\")\r\n        }\r\n    }\r\n\r\n    LaunchedEffect(viewModal.StreamingLink) {\r\n        when (viewModal.StreamingLink) {\r\n            is GetStreamingData.Error -> Log.d(\r\n                \"Streaming\",\r\n                (viewModal.StreamingLink as GetStreamingData.Error).message\r\n            )\r\n\r\n            is GetStreamingData.Loading -> Log.d(\"Streaming\", \"Loading\")\r\n            is GetStreamingData.Success -> {\r\n                viewModal.playQuality =\r\n                    (viewModal.StreamingLink as GetStreamingData.Success).streamingData.sources\r\n                URL = viewModal.playQuality[0].url\r\n            }\r\n        }\r\n    }\r\n\r\n    BackHandler {\r\n\r\n        viewModal.playQuality[0].url = \"\"\r\n\r\n        viewModal.updateCurrentEpisode(0)\r\n\r\n        if(viewModal.isLandscape.value){\r\n            viewModal.updateOrientation()\r\n        } else {\r\n            navController.popBackStack()\r\n        }\r\n\r\n    }\r\n\r\n\r\n    val exoPlayer = remember {\r\n        ExoPlayer.Builder(context)\r\n\r\n            .apply {\r\n                setSeekBackIncrementMs(PLAYER_SEEK_BACK_INCREMENT)\r\n                setSeekForwardIncrementMs(PLAYER_SEEK_FORWARD_INCREMENT)\r\n            }\r\n            .build()\r\n    }\r\n\r\n    LaunchedEffect(URL) {\r\n        if (URL.isNotEmpty()) {\r\n            val hlsDataSourceFactory = DefaultHttpDataSource.Factory()\r\n            val uri = Uri.Builder().encodedPath(URL).build() // streaming url\r\n            val hlsMediaItem = MediaItem.Builder().setUri(uri).build()\r\n            val mediaSource =\r\n                HlsMediaSource.Factory(hlsDataSourceFactory).createMediaSource(hlsMediaItem)\r\n            exoPlayer.setMediaSource(mediaSource)\r\n            exoPlayer.prepare()\r\n            exoPlayer.playWhenReady = true\r\n            // Log.d(\"video1\" , \"isPlaying from exoplayer launched effect  : ${exoPlayer.isPlaying}\")\r\n        }\r\n    }\r\n    val lifecycleOwner = rememberUpdatedState(LocalLifecycleOwner.current)\r\n\r\n    val observer = LifecycleEventObserver { owner, event ->\r\n        if (event ==  Lifecycle.Event.ON_PAUSE ) {\r\n            exoPlayer.pause()\r\n        }\r\n    }\r\n\r\n    val lifecycle = lifecycleOwner.value.lifecycle\r\n    lifecycle.addObserver(observer)\r\n\r\n    var shouldShowControles by remember { mutableStateOf(true) }\r\n    var isPlaying by remember { mutableStateOf(exoPlayer.isPlaying) }\r\n    var totalDuration by remember { mutableLongStateOf(0L) }\r\n    var bufferedPercentage by remember { mutableIntStateOf(0) }\r\n    var playbackState by remember { mutableStateOf(exoPlayer.playbackState) }\r\n\r\n    val brush: List<Color> = listOf(VibrantDark, black)\r\n    Column(\r\n        modifier = Modifier\r\n            .fillMaxSize()\r\n            .background(brush = Brush.verticalGradient(brush))\r\n            .also {\r\n                if(viewModal.isLandscape.value){\r\n                    it.statusBarsPadding()\r\n                }\r\n            }\r\n\r\n\r\n    ) {\r\n\r\n        Box(\r\n            modifier = modifier\r\n                .fillMaxWidth()\r\n                .fillMaxHeight(height).also {\r\n                    if(viewModal.isLandscape.value){\r\n                        it.statusBarsPadding()\r\n                    }\r\n                },\r\n            contentAlignment = Alignment.BottomCenter\r\n\r\n        ) {\r\n            val listener = object : Player.Listener {\r\n\r\n                override fun onEvents(\r\n                    player: Player,\r\n                    events: Player.Events,\r\n                ) {\r\n\r\n                    //Log.d(\"logee\" , \"onEvents called ${player.currentPosition}\")\r\n                    super.onEvents(player, events)\r\n                    totalDuration = player.duration.coerceAtLeast(0L)\r\n                    bufferedPercentage = player.bufferedPercentage\r\n                    isPlaying = player.isPlaying\r\n                    playbackState = player.playbackState\r\n                }\r\n\r\n            }\r\n\r\n            if (isPlaying) {\r\n                LaunchedEffect(Unit) {\r\n                    while(true) {\r\n                        viewModal.currentVideoTime.update {\r\n                            exoPlayer.getCurrentPosition().coerceAtLeast(0L)\r\n                        }\r\n                        delay(1.seconds )\r\n                    }\r\n                }\r\n            }\r\n\r\n\r\n\r\n            exoPlayer.addListener(listener)\r\n            DisposableEffect(key1 = Unit) {\r\n                onDispose {\r\n                    exoPlayer.removeListener(listener)\r\n                    exoPlayer.release()\r\n                    lifecycle.removeObserver(observer)\r\n                }\r\n            }\r\n            AndroidView(\r\n                modifier = modifier.also {\r\n                    if(viewModal.isLandscape.value){\r\n                        it.statusBarsPadding()\r\n                    }\r\n                }\r\n                    .clickable {\r\n                        shouldShowControles = shouldShowControles.not()\r\n                        systemUiController.isNavigationBarVisible =\r\n                            systemUiController.isNavigationBarVisible.not()\r\n                        systemUiController.isSystemBarsVisible =\r\n                            systemUiController.isSystemBarsVisible.not()\r\n                        systemUiController.isSystemBarsVisible =\r\n                            systemUiController.isSystemBarsVisible.not()\r\n                    }\r\n                    .wrapContentSize(Alignment.Center),\r\n                factory = {\r\n                    PlayerView(context).apply {\r\n                        player = exoPlayer\r\n                        useController = false\r\n                        layoutParams =\r\n                            FrameLayout.LayoutParams(\r\n                                ViewGroup.LayoutParams.MATCH_PARENT,\r\n                                ViewGroup.LayoutParams.MATCH_PARENT\r\n                            )\r\n                        keepScreenOn = true\r\n                    }\r\n                }\r\n            )\r\n\r\n            PlayerControles(\r\n                modifier = modifier\r\n                    .fillMaxWidth()\r\n                    .fillMaxHeight()\r\n                    .background(Color.Black.copy(alpha = .3f))\r\n                   ,\r\n                isVisible = { shouldShowControles },\r\n                isPlaying = {\r\n                    isPlaying\r\n                },\r\n                title = { \" Episode : ${viewModal.currentEpisode+1} \" },\r\n                playbackState = { playbackState },\r\n                onReplayClick = { exoPlayer.seekBack() },\r\n                onForwardClick = { exoPlayer.seekForward() },\r\n                onPauseToggle = {\r\n                    when {\r\n                        exoPlayer.isPlaying -> {\r\n                            exoPlayer.pause()\r\n                        }\r\n\r\n                        exoPlayer.isPlaying.not() &&\r\n                                playbackState == STATE_ENDED -> {\r\n                            exoPlayer.seekTo(0)\r\n                            exoPlayer.playWhenReady = true\r\n                        }\r\n\r\n                        else -> {\r\n                            exoPlayer.play()\r\n                        }\r\n                    }\r\n                    isPlaying = isPlaying.not()\r\n                },\r\n                totalDuration = { totalDuration },\r\n                bufferedPercentage = { bufferedPercentage },\r\n                viewModel = viewModal,\r\n                onSeekChanged = { timeMs: Float ->\r\n                    exoPlayer.seekTo(timeMs.toLong())\r\n                }\r\n            )\r\n        }\r\n        Text(\"Quality\" , modifier = Modifier\r\n            .fillMaxWidth()\r\n            .padding(10.dp),\r\n            fontSize = 20.sp,\r\n            color = Color.White\r\n        )\r\n\r\n        LazyRow(modifier = Modifier\r\n            .fillMaxWidth()\r\n            .height(55.dp)\r\n            .background(Color.Transparent),\r\n            contentPadding = PaddingValues(10.dp)\r\n        ) {\r\n            items(viewModal.playQuality , key = {it.quality}){\r\n                    ep->\r\n                Box(\r\n                    modifier = Modifier\r\n                        .padding(start = 10.dp, end = 10.dp)\r\n                        .clip(RoundedCornerShape(35.dp))\r\n                        .border(\r\n                            1.dp,\r\n                            color = Color.White,\r\n                            shape = RoundedCornerShape(25.dp)\r\n                        )\r\n                        .height(height = 55.dp)\r\n                        .background(Vibrant.copy(.5f))\r\n                        .clickable {\r\n                            URL = ep.url\r\n                        },\r\n\r\n                    contentAlignment = Alignment.Center,\r\n                ) {\r\n                    Text(\r\n                        ep.quality,\r\n                        modifier = Modifier.padding(start = 5.dp, end = 5.dp),\r\n                        fontSize = 20.sp,\r\n                        color = Color.White,\r\n                        textAlign = TextAlign.Center\r\n                    )\r\n                }\r\n            }\r\n        }\r\n\r\n\r\n\r\n        Text(\"Episodes\" , modifier = Modifier\r\n            .fillMaxWidth()\r\n            .padding(10.dp),\r\n            fontSize = 20.sp,\r\n            color = Color.White\r\n        )\r\n\r\n        //Episodes ids\r\n        LazyColumn(modifier = Modifier\r\n            .fillMaxWidth()\r\n            .clip(RoundedCornerShape(topStart = 25.dp, topEnd = 25.dp))\r\n            .background(\r\n                brush = Brush.verticalGradient(\r\n                    listOf(\r\n                        Vibrant.copy(.5f),\r\n                        Color.Transparent\r\n                    )\r\n                )\r\n            )\r\n            , contentPadding = PaddingValues(10.dp)\r\n        ) {\r\n            items(viewModal.AnimeEpisodesIDs , key = {it.id}){\r\n                    ep->\r\n                Box(\r\n                    modifier = Modifier\r\n                        .fillMaxWidth()\r\n                        .height(height = 70.dp)\r\n                        .padding(10.dp)\r\n                        .clip(RoundedCornerShape(25.dp))\r\n                        .border(\r\n                            width = 1.dp,\r\n                            color = Color.White,\r\n                            shape = RoundedCornerShape(25.dp)\r\n                        )\r\n                        .background(\r\n                            if (ep.number - 1 == viewModal.currentEpisode) VibrantDark.copy(\r\n                                .5f\r\n                            ) else Vibrant\r\n                        )\r\n                        .clickable {\r\n                            Log.d(\"ep\", \"ep id : ${ep.number}\")\r\n                            viewModal.updateCurrentEpisode(ep.number)\r\n                            currentEpPlayingID = ep.id\r\n                        },\r\n                    contentAlignment = Alignment.Center,\r\n                ) {\r\n\r\n                    Text(\"Episode \"+ ep.number.toString(), modifier = Modifier.padding(start = 5.dp , end = 5.dp), fontSize = 10.sp, color = Color.White, textAlign = TextAlign.Center)\r\n                }\r\n            }\r\n        }\r\n    }\r\n}\r\n\r\n@Composable\r\nfun PlayerControles(\r\n    modifier: Modifier = Modifier,\r\n    isVisible: () -> Boolean,\r\n    isPlaying: () -> Boolean,\r\n    title: () -> String,\r\n    onReplayClick: () -> Unit,\r\n    onForwardClick: () -> Unit,\r\n    onPauseToggle: () -> Unit,\r\n    totalDuration: () -> Long,\r\n    bufferedPercentage: () -> Int,\r\n    playbackState: () -> Int,\r\n    onSeekChanged: (timeMs: Float) -> Unit,\r\n    viewModel: AniplexViewModal,\r\n){\r\n    val visible = remember(isVisible()) { isVisible() }\r\n\r\n    AnimatedVisibility(\r\n        modifier = modifier ,\r\n        visible = visible ,\r\n        enter = fadeIn() ,\r\n        exit = fadeOut()\r\n    ) {\r\n        Box(modifier = Modifier.background(Color.Transparent)){\r\n\r\n            TopControles(modifier = modifier\r\n                .align(Alignment.TopCenter)\r\n                .fillMaxWidth(),\r\n                title = title\r\n            )\r\n\r\n            CenterControles(modifier= Modifier\r\n                .align(Alignment.Center)\r\n                .fillMaxWidth(),\r\n                isPlaying = isPlaying,\r\n                onReplayClick = { onReplayClick() },\r\n                onForwardClick = { onForwardClick() },\r\n                onPauseToggle = { onPauseToggle() },\r\n                playbackState = { playbackState() }\r\n            )\r\n            BottomControles(\r\n                modifier = Modifier\r\n                    .align(Alignment.BottomCenter)\r\n                    .fillMaxWidth()\r\n                    .animateEnterExit(\r\n                        enter =\r\n                        slideInVertically(\r\n                            initialOffsetY = { fullHeight: Int ->\r\n                                fullHeight\r\n                            }\r\n                        ),\r\n                        exit =\r\n                        slideOutVertically(\r\n                            targetOffsetY = { fullHeight: Int ->\r\n                                fullHeight\r\n                            }\r\n                        )\r\n                    ),\r\n                totalDuration = { totalDuration() },\r\n                bufferedPercentage = {bufferedPercentage()},\r\n                onSeekChanged = onSeekChanged,\r\n                viewModel = viewModel\r\n            )\r\n        }\r\n    }\r\n}\r\n\r\n\r\n@androidx.annotation.OptIn(UnstableApi::class)\r\n@Composable\r\nfun CenterControles(\r\n    modifier: Modifier = Modifier,\r\n    isPlaying: () -> Boolean,\r\n    onReplayClick: () -> Unit,\r\n    onForwardClick: () -> Unit,\r\n    onPauseToggle: () -> Unit,\r\n    playbackState: () -> Int,\r\n){\r\n\r\n    val isVideoPlaying = remember(isPlaying()) { isPlaying() }.also {\r\n        //Log.d(\"video1\" , \"isplaying : ${isPlaying()}\")\r\n    }\r\n    val playerState = remember(playbackState()) { playbackState() }.also {\r\n        // Log.d(\"video1\" , \" playbackState : ${playbackState()}\")\r\n    }\r\n\r\n    Row (modifier = modifier.fillMaxWidth(),verticalAlignment = Alignment.CenterVertically , horizontalArrangement = Arrangement.SpaceEvenly){\r\n        IconButton(modifier = Modifier.size(40.dp), onClick = {onReplayClick()}) {\r\n            Icon(\r\n                painter = painterResource(id = R.drawable.backward_10s),\r\n                contentDescription = \"forward\",\r\n                tint = Color.White\r\n            )\r\n        }\r\n\r\n        if (playerState == STATE_BUFFERING ){\r\n            CircularProgressIndicator(modifier= Modifier.size(40.dp))\r\n        }\r\n        else{\r\n            IconButton(modifier = Modifier.size(40.dp), onClick = {onPauseToggle()}) {\r\n                Icon(\r\n                    painter = when{\r\n                        isVideoPlaying -> {\r\n                            painterResource(id = R.drawable.pause)\r\n                        }\r\n                        isVideoPlaying.not() && playerState == STATE_ENDED -> {\r\n                            painterResource(id= R.drawable.replay)\r\n                        }\r\n                        else -> {\r\n                            painterResource(id = R.drawable.play)\r\n                        }\r\n                    },\r\n\r\n                    tint = Color.White,\r\n                    contentDescription = \"play/pause\",\r\n                )\r\n            }\r\n        }\r\n\r\n        IconButton(modifier = Modifier.size(40.dp), onClick = {onForwardClick()}) {\r\n            Icon(\r\n                painter = painterResource(id = R.drawable.forward_15_seconds) ,\r\n                contentDescription = \"forward\",\r\n                tint = Color.White\r\n            )\r\n        }\r\n    }\r\n}\r\n\r\n@Composable\r\nfun TopControles(modifier: Modifier = Modifier , title : () -> String ){\r\n    val videoTitle = remember(title()) { title() }\r\n    Row (modifier = modifier.fillMaxWidth().statusBarsPadding(), horizontalArrangement = Arrangement.Center){\r\n        Text(videoTitle, fontSize = 15.sp , textAlign = TextAlign.Center , color = Color.White)\r\n    }\r\n}\r\n\r\n\r\n\r\n@OptIn(ExperimentalMaterial3Api::class)\r\n@Composable\r\nfun BottomControles(\r\n    modifier: Modifier = Modifier,\r\n    totalDuration: () -> Long,\r\n    bufferedPercentage: () -> Int,\r\n    onSeekChanged: (timeMs: Float) -> Unit,\r\n    viewModel: AniplexViewModal,\r\n){\r\n\r\n\r\n    val duration = remember(totalDuration()) { totalDuration() }\r\n\r\n    val videoTime by viewModel.currentVideoTime.collectAsState(initial = 0f)\r\n\r\n\r\n  //  val buffer = remember(bufferedPercentage()) { bufferedPercentage() }\r\n\r\n    Column(modifier = modifier.statusBarsPadding()) {\r\n        Box(modifier = modifier.fillMaxWidth()) {\r\n//            Slider(                                   // for  showing buffer percentage\r\n//                modifier = Modifier\r\n//                    .padding(start = 10.dp, end = 10.dp)\r\n//                    .fillMaxWidth(),\r\n//                value = buffer.toFloat(),\r\n//                enabled = false,\r\n//                onValueChange = {},\r\n//                valueRange = 0f..1f,\r\n//                colors =\r\n//                SliderDefaults.colors(\r\n//                    disabledThumbColor = Color.Transparent,\r\n//                    disabledActiveTrackColor = Color.Red\r\n//                )\r\n//            )\r\n\r\n            Slider(\r\n                modifier = Modifier\r\n                    .padding(start = 15.dp, end = 15.dp)\r\n                    .fillMaxWidth(),\r\n                value = videoTime.toFloat(),\r\n                onValueChange = {\r\n                    onSeekChanged(it)\r\n                   viewModel.updateCurrentVideoTime(it.toLong())\r\n                                },\r\n                valueRange = 0f..duration.toFloat(),\r\n                colors = SliderDefaults.colors(\r\n                    thumbColor = Color.White,\r\n                    activeTrackColor = Color.White,\r\n                    activeTickColor = Color.White,\r\n                    inactiveTickColor = Color.White\r\n                )\r\n            )\r\n        }\r\n\r\n        Row (\r\n            modifier = Modifier\r\n                .fillMaxWidth()\r\n                .padding(bottom = 10.dp, start = 25.dp, end = 25.dp)\r\n            ,horizontalArrangement = Arrangement.SpaceBetween\r\n        ){\r\n            Text(text = \"${videoTime.toLong().formatMinSec() }/${totalDuration().formatMinSec()}\", color = Color.White)\r\n\r\n            Box(modifier = Modifier\r\n                .size(33.dp)\r\n                .clickable {\r\n                    viewModel.updateOrientation()\r\n                    // Log.d(\"viewmodal\", viewModel.isLandscape.value.toString() + \" from button bottom composable \")\r\n                }\r\n                .wrapContentSize(Alignment.Center)\r\n            ){\r\n                Icon(\r\n                    modifier = Modifier.size(23.dp),\r\n                    painter = painterResource(id = R.drawable.screen_rotation_button) ,\r\n                    contentDescription = \"forward\",\r\n                    tint = Color.White\r\n                )\r\n            }\r\n        }\r\n    }\r\n}\r\n\r\n\r\n@SuppressLint(\"DefaultLocale\")\r\nfun Long.formatMinSec(): String {\r\n    return if (this == 0L) {\r\n        \"...\"\r\n    } else {\r\n        String.format(\r\n            \"%02d:%02d\",\r\n            TimeUnit.MILLISECONDS.toMinutes(this),\r\n            TimeUnit.MILLISECONDS.toSeconds(this) -  TimeUnit.MINUTES.toSeconds(\r\n                TimeUnit.MILLISECONDS.toMinutes(this)\r\n            )\r\n        )\r\n    }\r\n}\r\n\r\n\r\n\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/example/aniplex/UILayer/VideoController.kt b/app/src/main/java/com/example/aniplex/UILayer/VideoController.kt
+--- a/app/src/main/java/com/example/aniplex/UILayer/VideoController.kt	(revision 1b9548eef0aa7e36aa7ce659dc0342bef3a9c464)
++++ b/app/src/main/java/com/example/aniplex/UILayer/VideoController.kt	(date 1735587945222)
+@@ -11,6 +11,7 @@
+ import android.view.ViewGroup
+ import android.widget.FrameLayout
+ import androidx.activity.compose.BackHandler
++import androidx.annotation.OptIn
+ import androidx.compose.animation.AnimatedVisibility
+ import androidx.compose.animation.fadeIn
+ import androidx.compose.animation.fadeOut
+@@ -37,7 +38,6 @@
+ import androidx.compose.foundation.lazy.items
+ import androidx.compose.foundation.shape.RoundedCornerShape
+ import androidx.compose.material3.CircularProgressIndicator
+-import androidx.compose.material3.ExperimentalMaterial3Api
+ import androidx.compose.material3.Icon
+ import androidx.compose.material3.IconButton
+ import androidx.compose.material3.Slider
+@@ -75,7 +75,6 @@
+ import androidx.media3.common.Player.STATE_BUFFERING
+ import androidx.media3.common.util.UnstableApi
+ import androidx.media3.datasource.DefaultHttpDataSource
+-import androidx.media3.exoplayer.ExoPlayer
+ import androidx.media3.exoplayer.hls.HlsMediaSource
+ import androidx.media3.ui.PlayerView
+ import androidx.navigation.NavHostController
+@@ -90,16 +89,16 @@
+ import java.util.concurrent.TimeUnit
+ import kotlin.time.Duration.Companion.seconds
+ 
+-private const val PLAYER_SEEK_BACK_INCREMENT = 10 * 1000L // 10 seconds
+-private const val PLAYER_SEEK_FORWARD_INCREMENT = 15 * 1000L // 15 seconds
++const val PLAYER_SEEK_BACK_INCREMENT = 10 * 1000L // 10 seconds
++const val PLAYER_SEEK_FORWARD_INCREMENT = 15 * 1000L // 15 seconds
+ @androidx.annotation.OptIn(UnstableApi::class)
+ @Composable
+ fun CustomVideoPlayer(
+     modifier: Modifier = Modifier,
+     viewModal: AniplexViewModal,
+-    navController: NavHostController
++    navController: NavHostController,
+ ) {
+-
++    var isVideoVisible by remember { mutableStateOf(true) }
+     var currentEpPlayingID by remember { mutableStateOf(viewModal.AnimeEpisodesIDs[viewModal.currentEpisode].id) }
+     //var playQualityIndex by remember { mutableIntStateOf(0) }
+     var URL by remember { mutableStateOf(viewModal.playQuality[0].url) }
+@@ -148,30 +147,18 @@
+         }
+     }
+ 
+-    BackHandler {
+-
+-        viewModal.playQuality[0].url = ""
+-
+-        viewModal.updateCurrentEpisode(0)
+-
+-        if(viewModal.isLandscape.value){
+-            viewModal.updateOrientation()
+-        } else {
+-            navController.popBackStack()
+-        }
+ 
+-    }
+ 
+ 
+-    val exoPlayer = remember {
+-        ExoPlayer.Builder(context)
+-
+-            .apply {
+-                setSeekBackIncrementMs(PLAYER_SEEK_BACK_INCREMENT)
+-                setSeekForwardIncrementMs(PLAYER_SEEK_FORWARD_INCREMENT)
+-            }
+-            .build()
+-    }
++//    val exoPlayer = remember {
++//        ExoPlayer.Builder(context)
++//
++//            .apply {
++//                setSeekBackIncrementMs(PLAYER_SEEK_BACK_INCREMENT)
++//                setSeekForwardIncrementMs(PLAYER_SEEK_FORWARD_INCREMENT)
++//            }
++//            .build()
++//    }
+ 
+     LaunchedEffect(URL) {
+         if (URL.isNotEmpty()) {
+@@ -180,17 +167,18 @@
+             val hlsMediaItem = MediaItem.Builder().setUri(uri).build()
+             val mediaSource =
+                 HlsMediaSource.Factory(hlsDataSourceFactory).createMediaSource(hlsMediaItem)
+-            exoPlayer.setMediaSource(mediaSource)
+-            exoPlayer.prepare()
+-            exoPlayer.playWhenReady = true
++            viewModal.exoPlayer.setMediaSource(mediaSource)
++            viewModal.exoPlayer.prepare()
++            viewModal.exoPlayer.playWhenReady = true
+             // Log.d("video1" , "isPlaying from exoplayer launched effect  : ${exoPlayer.isPlaying}")
+         }
+     }
++
+     val lifecycleOwner = rememberUpdatedState(LocalLifecycleOwner.current)
+ 
+     val observer = LifecycleEventObserver { owner, event ->
+         if (event ==  Lifecycle.Event.ON_PAUSE ) {
+-            exoPlayer.pause()
++            viewModal.exoPlayer.pause()
+         }
+     }
+ 
+@@ -198,10 +186,24 @@
+     lifecycle.addObserver(observer)
+ 
+     var shouldShowControles by remember { mutableStateOf(true) }
+-    var isPlaying by remember { mutableStateOf(exoPlayer.isPlaying) }
++    var isPlaying by remember { mutableStateOf(viewModal.exoPlayer.isPlaying) }
+     var totalDuration by remember { mutableLongStateOf(0L) }
+     var bufferedPercentage by remember { mutableIntStateOf(0) }
+-    var playbackState by remember { mutableStateOf(exoPlayer.playbackState) }
++    var playbackState by remember { mutableStateOf(viewModal.exoPlayer.playbackState) }
++
++    BackHandler {
++        isVideoVisible = false // Hide the video view immediately
++        viewModal.exoPlayer.pause()
++        viewModal.playQuality[0].url = ""
++
++        viewModal.updateCurrentEpisode(0)
++
++        if(viewModal.isLandscape.value){
++            viewModal.updateOrientation()
++        } else {
++            navController.popBackStack()
++        }
++    }
+ 
+     val brush: List<Color> = listOf(VibrantDark, black)
+     Column(
+@@ -213,8 +215,6 @@
+                     it.statusBarsPadding()
+                 }
+             }
+-
+-
+     ) {
+ 
+         Box(
+@@ -249,7 +249,7 @@
+                 LaunchedEffect(Unit) {
+                     while(true) {
+                         viewModal.currentVideoTime.update {
+-                            exoPlayer.getCurrentPosition().coerceAtLeast(0L)
++                            viewModal.exoPlayer.getCurrentPosition().coerceAtLeast(0L)
+                         }
+                         delay(1.seconds )
+                     }
+@@ -258,16 +258,18 @@
+ 
+ 
+ 
+-            exoPlayer.addListener(listener)
++            viewModal.exoPlayer.addListener(listener)
+             DisposableEffect(key1 = Unit) {
+                 onDispose {
+-                    exoPlayer.removeListener(listener)
+-                    exoPlayer.release()
++                    viewModal.exoPlayer.removeListener(listener)
++                    //viewModal.exoPlayer.release()
+                     lifecycle.removeObserver(observer)
++
+                 }
+             }
++            if (isVideoVisible) {
+             AndroidView(
+-                modifier = modifier.also {
++                modifier = Modifier.also {
+                     if(viewModal.isLandscape.value){
+                         it.statusBarsPadding()
+                     }
+@@ -281,10 +283,12 @@
+                         systemUiController.isSystemBarsVisible =
+                             systemUiController.isSystemBarsVisible.not()
+                     }
+-                    .wrapContentSize(Alignment.Center),
++                    .wrapContentSize(Alignment.Center)
++                    .background(Color.Green)
++                    .align(Alignment.BottomCenter),
+                 factory = {
+                     PlayerView(context).apply {
+-                        player = exoPlayer
++                        player = viewModal.exoPlayer
+                         useController = false
+                         layoutParams =
+                             FrameLayout.LayoutParams(
+@@ -293,8 +297,10 @@
+                             )
+                         keepScreenOn = true
+                     }
+-                }
++                },
++
+             )
++            }
+ 
+             PlayerControles(
+                 modifier = modifier
+@@ -308,22 +314,22 @@
+                 },
+                 title = { " Episode : ${viewModal.currentEpisode+1} " },
+                 playbackState = { playbackState },
+-                onReplayClick = { exoPlayer.seekBack() },
+-                onForwardClick = { exoPlayer.seekForward() },
++                onReplayClick = { viewModal.exoPlayer.seekBack() },
++                onForwardClick = { viewModal.exoPlayer.seekForward() },
+                 onPauseToggle = {
+                     when {
+-                        exoPlayer.isPlaying -> {
+-                            exoPlayer.pause()
++                        viewModal.exoPlayer.isPlaying -> {
++                            viewModal.exoPlayer.pause()
+                         }
+ 
+-                        exoPlayer.isPlaying.not() &&
++                        viewModal.exoPlayer.isPlaying.not() &&
+                                 playbackState == STATE_ENDED -> {
+-                            exoPlayer.seekTo(0)
+-                            exoPlayer.playWhenReady = true
++                            viewModal.exoPlayer.seekTo(0)
++                            viewModal.exoPlayer.playWhenReady = true
+                         }
+ 
+                         else -> {
+-                            exoPlayer.play()
++                            viewModal.exoPlayer.play()
+                         }
+                     }
+                     isPlaying = isPlaying.not()
+@@ -332,7 +338,7 @@
+                 bufferedPercentage = { bufferedPercentage },
+                 viewModel = viewModal,
+                 onSeekChanged = { timeMs: Float ->
+-                    exoPlayer.seekTo(timeMs.toLong())
++                    viewModal.exoPlayer.seekTo(timeMs.toLong())
+                 }
+             )
+         }
+@@ -435,6 +441,7 @@
+     }
+ }
+ 
++@OptIn(UnstableApi::class)
+ @Composable
+ fun PlayerControles(
+     modifier: Modifier = Modifier,
+@@ -514,12 +521,14 @@
+     playbackState: () -> Int,
+ ){
+ 
+-    val isVideoPlaying = remember(isPlaying()) { isPlaying() }.also {
+-        //Log.d("video1" , "isplaying : ${isPlaying()}")
+-    }
+-    val playerState = remember(playbackState()) { playbackState() }.also {
+-        // Log.d("video1" , " playbackState : ${playbackState()}")
+-    }
++    val isVideoPlaying = remember(isPlaying()) { isPlaying() }
++//        .also {
++//        //Log.d("video1" , "isplaying : ${isPlaying()}")
++//    }
++    val playerState = remember(playbackState()) { playbackState() }
++//        .also {
++//        // Log.d("video1" , " playbackState : ${playbackState()}")
++//    }
+ 
+     Row (modifier = modifier.fillMaxWidth(),verticalAlignment = Alignment.CenterVertically , horizontalArrangement = Arrangement.SpaceEvenly){
+         IconButton(modifier = Modifier.size(40.dp), onClick = {onReplayClick()}) {
+@@ -573,8 +582,7 @@
+ }
+ 
+ 
+-
+-@OptIn(ExperimentalMaterial3Api::class)
++@androidx.annotation.OptIn(UnstableApi::class)
+ @Composable
+ fun BottomControles(
+     modifier: Modifier = Modifier,
+Index: app/src/main/java/com/example/aniplex/MainActivity.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package com.example.aniplex\r\n\r\nimport android.os.Bundle\r\nimport androidx.activity.ComponentActivity\r\nimport androidx.activity.compose.setContent\r\nimport androidx.activity.enableEdgeToEdge\r\nimport androidx.activity.viewModels\r\nimport com.example.aniplex.Navigation.Navigation\r\nimport com.example.aniplex.ViewModal.AniplexViewModal\r\nimport com.example.aniplex.ui.theme.AniplexTheme\r\nimport dagger.hilt.android.AndroidEntryPoint\r\n\r\n@AndroidEntryPoint\r\nclass MainActivity : ComponentActivity() {\r\n    override fun onCreate(savedInstanceState: Bundle?) {\r\n        super.onCreate(savedInstanceState)\r\n        enableEdgeToEdge()\r\n        setContent {\r\n            AniplexTheme {\r\n                val AniplexViewModal : AniplexViewModal by viewModels()\r\n\r\n                Navigation( AniplexViewModal)\r\n                //ExoPlayerView(\"https://www118.anzeat.pro/streamhls/4bc8df880225830b6077fbccc564a0f4/ep.1.1728066302.360.m3u8\")\r\n\r\n            }\r\n        }\r\n    }\r\n}\r\n\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/example/aniplex/MainActivity.kt b/app/src/main/java/com/example/aniplex/MainActivity.kt
+--- a/app/src/main/java/com/example/aniplex/MainActivity.kt	(revision 1b9548eef0aa7e36aa7ce659dc0342bef3a9c464)
++++ b/app/src/main/java/com/example/aniplex/MainActivity.kt	(date 1735588192647)
+@@ -5,6 +5,8 @@
+ import androidx.activity.compose.setContent
+ import androidx.activity.enableEdgeToEdge
+ import androidx.activity.viewModels
++import androidx.annotation.OptIn
++import androidx.media3.common.util.UnstableApi
+ import com.example.aniplex.Navigation.Navigation
+ import com.example.aniplex.ViewModal.AniplexViewModal
+ import com.example.aniplex.ui.theme.AniplexTheme
+@@ -12,6 +14,7 @@
+ 
+ @AndroidEntryPoint
+ class MainActivity : ComponentActivity() {
++    @OptIn(UnstableApi::class)
+     override fun onCreate(savedInstanceState: Bundle?) {
+         super.onCreate(savedInstanceState)
+         enableEdgeToEdge()

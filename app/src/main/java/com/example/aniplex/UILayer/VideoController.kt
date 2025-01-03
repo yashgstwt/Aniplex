@@ -6,11 +6,14 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.pm.ActivityInfo
 import android.media.metrics.PlaybackStateEvent.STATE_ENDED
+import android.media.metrics.PlaybackStateEvent.STATE_NOT_STARTED
+import android.media.metrics.PlaybackStateEvent.STATE_STOPPED
 import android.net.Uri
 import android.util.Log
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.activity.compose.BackHandler
+import androidx.annotation.OptIn
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -24,6 +27,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -37,14 +41,12 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -73,9 +75,9 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.Player.STATE_BUFFERING
+import androidx.media3.common.Player.STATE_READY
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultHttpDataSource
-import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.hls.HlsMediaSource
 import androidx.media3.ui.PlayerView
 import androidx.navigation.NavHostController
@@ -90,32 +92,29 @@ import kotlinx.coroutines.flow.update
 import java.util.concurrent.TimeUnit
 import kotlin.time.Duration.Companion.seconds
 
-private const val PLAYER_SEEK_BACK_INCREMENT = 10 * 1000L // 10 seconds
-private const val PLAYER_SEEK_FORWARD_INCREMENT = 15 * 1000L // 15 seconds
+const val PLAYER_SEEK_BACK_INCREMENT = 10 * 1000L // 10 seconds
+const val PLAYER_SEEK_FORWARD_INCREMENT = 15 * 1000L // 15 seconds
 @androidx.annotation.OptIn(UnstableApi::class)
 @Composable
 fun CustomVideoPlayer(
     modifier: Modifier = Modifier,
     viewModal: AniplexViewModal,
-    navController: NavHostController
+    navController: NavHostController,
 ) {
-
+    var isVideoVisible by remember { mutableStateOf(true) }
     var currentEpPlayingID by remember { mutableStateOf(viewModal.AnimeEpisodesIDs[viewModal.currentEpisode].id) }
-    //var playQualityIndex by remember { mutableIntStateOf(0) }
     var URL by remember { mutableStateOf(viewModal.playQuality[0].url) }
-
-    // Log.d("Streaming" ,"hay" +currentEpPlaying)
-    // method to get streaming link from episode id  i.e from currentEpPlaying
+    var currentPosition by remember { mutableLongStateOf(0L) } // holds the current position of video
+    var shouldSeek by remember { mutableStateOf(false) }
 
     LaunchedEffect (currentEpPlayingID){
         viewModal.getStreamingLink(currentEpPlayingID, viewModal.playbackServer)
     }
 
-
     val systemUiController: SystemUiController = rememberSystemUiController()
     val context = LocalContext.current
     val activity = context as? Activity
-    var height by remember { mutableFloatStateOf(.3f) }
+    var height by remember { mutableFloatStateOf(.27f) }
 
     LaunchedEffect(viewModal.isLandscape.collectAsState().value, LocalConfiguration.current) {
         // Log.d("viewmodal", viewModel.getIsLandscape().toString() + " from launched effect ")
@@ -148,83 +147,52 @@ fun CustomVideoPlayer(
         }
     }
 
-    BackHandler {
-
-        viewModal.playQuality[0].url = ""
-
-        viewModal.updateCurrentEpisode(0)
-
-        if(viewModal.isLandscape.value){
-            viewModal.updateOrientation()
-        } else {
-            navController.popBackStack()
-        }
-
-    }
-
-
-    val exoPlayer = remember {
-        ExoPlayer.Builder(context)
-
-            .apply {
-                setSeekBackIncrementMs(PLAYER_SEEK_BACK_INCREMENT)
-                setSeekForwardIncrementMs(PLAYER_SEEK_FORWARD_INCREMENT)
-            }
-            .build()
-    }
 
     LaunchedEffect(URL) {
+        Log.d("epsodeee", " URL : $URL")
         if (URL.isNotEmpty()) {
             val hlsDataSourceFactory = DefaultHttpDataSource.Factory()
             val uri = Uri.Builder().encodedPath(URL).build() // streaming url
             val hlsMediaItem = MediaItem.Builder().setUri(uri).build()
             val mediaSource =
                 HlsMediaSource.Factory(hlsDataSourceFactory).createMediaSource(hlsMediaItem)
-            exoPlayer.setMediaSource(mediaSource)
-            exoPlayer.prepare()
-            exoPlayer.playWhenReady = true
-            // Log.d("video1" , "isPlaying from exoplayer launched effect  : ${exoPlayer.isPlaying}")
+            viewModal.exoPlayer.setMediaSource(mediaSource)
+            viewModal.exoPlayer.prepare()
+            viewModal.exoPlayer.playWhenReady = true
+            if (shouldSeek) {
+                Log.d("epsodeee", " INSIDE URL   current position : ${viewModal.exoPlayer.currentPosition} , currentPositionVar : ${currentPosition}")
+                viewModal.exoPlayer.seekTo(currentPosition)
+                shouldSeek = false
+            }
         }
     }
-    val lifecycleOwner = rememberUpdatedState(LocalLifecycleOwner.current)
 
+    val lifecycleOwner = rememberUpdatedState(LocalLifecycleOwner.current)
     val observer = LifecycleEventObserver { owner, event ->
         if (event ==  Lifecycle.Event.ON_PAUSE ) {
-            exoPlayer.pause()
+            viewModal.exoPlayer.pause()
         }
     }
-
     val lifecycle = lifecycleOwner.value.lifecycle
     lifecycle.addObserver(observer)
-
     var shouldShowControles by remember { mutableStateOf(true) }
-    var isPlaying by remember { mutableStateOf(exoPlayer.isPlaying) }
+    var isPlaying by remember { mutableStateOf(viewModal.exoPlayer.isPlaying) }
     var totalDuration by remember { mutableLongStateOf(0L) }
     var bufferedPercentage by remember { mutableIntStateOf(0) }
-    var playbackState by remember { mutableStateOf(exoPlayer.playbackState) }
-
+    var playbackState by remember { mutableStateOf(viewModal.exoPlayer.playbackState) }
     val brush: List<Color> = listOf(VibrantDark, black)
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(brush = Brush.verticalGradient(brush))
-            .also {
-                if(viewModal.isLandscape.value){
-                    it.statusBarsPadding()
-                }
-            }
-
 
     ) {
 
         Box(
-            modifier = modifier
+            modifier = modifier.statusBarsPadding()
                 .fillMaxWidth()
-                .fillMaxHeight(height).also {
-                    if(viewModal.isLandscape.value){
-                        it.statusBarsPadding()
-                    }
-                },
+                .fillMaxHeight(height),
             contentAlignment = Alignment.BottomCenter
 
         ) {
@@ -249,29 +217,34 @@ fun CustomVideoPlayer(
                 LaunchedEffect(Unit) {
                     while(true) {
                         viewModal.currentVideoTime.update {
-                            exoPlayer.getCurrentPosition().coerceAtLeast(0L)
+                            viewModal.exoPlayer.getCurrentPosition().coerceAtLeast(0L)
                         }
                         delay(1.seconds )
                     }
                 }
             }
 
+            viewModal.exoPlayer.addListener(listener)
 
-
-            exoPlayer.addListener(listener)
-            DisposableEffect(key1 = Unit) {
-                onDispose {
-                    exoPlayer.removeListener(listener)
-                    exoPlayer.release()
+            BackHandler {
+                if(viewModal.isLandscape.value){
+                    viewModal.updateOrientation()
+                } else {
+                    navController.popBackStack()
+                    isVideoVisible = false // Hide the video view
+                    viewModal.exoPlayer.pause()
+                    viewModal.playQuality[0].url = "default null "
+                    viewModal.updateCurrentEpisode(0)
+                    viewModal.exoPlayer.removeListener(listener)
                     lifecycle.removeObserver(observer)
                 }
             }
+
+
+            if (isVideoVisible) {
+
             AndroidView(
-                modifier = modifier.also {
-                    if(viewModal.isLandscape.value){
-                        it.statusBarsPadding()
-                    }
-                }
+                modifier = Modifier
                     .clickable {
                         shouldShowControles = shouldShowControles.not()
                         systemUiController.isNavigationBarVisible =
@@ -281,10 +254,11 @@ fun CustomVideoPlayer(
                         systemUiController.isSystemBarsVisible =
                             systemUiController.isSystemBarsVisible.not()
                     }
-                    .wrapContentSize(Alignment.Center),
+                    .wrapContentSize(Alignment.Center)
+                    .align(Alignment.BottomCenter),
                 factory = {
                     PlayerView(context).apply {
-                        player = exoPlayer
+                        player = viewModal.exoPlayer
                         useController = false
                         layoutParams =
                             FrameLayout.LayoutParams(
@@ -293,8 +267,9 @@ fun CustomVideoPlayer(
                             )
                         keepScreenOn = true
                     }
-                }
+                },
             )
+            }
 
             PlayerControles(
                 modifier = modifier
@@ -306,24 +281,24 @@ fun CustomVideoPlayer(
                 isPlaying = {
                     isPlaying
                 },
-                title = { " Episode : ${viewModal.currentEpisode+1} " },
+                title = { " Episode : ${viewModal.currentEpisode} " },
                 playbackState = { playbackState },
-                onReplayClick = { exoPlayer.seekBack() },
-                onForwardClick = { exoPlayer.seekForward() },
+                onBackwardClick = { viewModal.exoPlayer.seekBack() },
+                onForwardClick = { viewModal.exoPlayer.seekForward() },
                 onPauseToggle = {
                     when {
-                        exoPlayer.isPlaying -> {
-                            exoPlayer.pause()
+                        viewModal.exoPlayer.isPlaying -> {
+                            viewModal.exoPlayer.pause()
                         }
 
-                        exoPlayer.isPlaying.not() &&
+                        viewModal.exoPlayer.isPlaying.not() &&
                                 playbackState == STATE_ENDED -> {
-                            exoPlayer.seekTo(0)
-                            exoPlayer.playWhenReady = true
+                            viewModal.exoPlayer.seekTo(0)
+                            viewModal.exoPlayer.playWhenReady = true
                         }
 
                         else -> {
-                            exoPlayer.play()
+                            viewModal.exoPlayer.play()
                         }
                     }
                     isPlaying = isPlaying.not()
@@ -332,7 +307,7 @@ fun CustomVideoPlayer(
                 bufferedPercentage = { bufferedPercentage },
                 viewModel = viewModal,
                 onSeekChanged = { timeMs: Float ->
-                    exoPlayer.seekTo(timeMs.toLong())
+                    viewModal.exoPlayer.seekTo(timeMs.toLong())
                 }
             )
         }
@@ -354,31 +329,35 @@ fun CustomVideoPlayer(
                 Box(
                     modifier = Modifier
                         .padding(start = 10.dp, end = 10.dp)
-                        .clip(RoundedCornerShape(35.dp))
+                        .clip(RoundedCornerShape(12.dp))
                         .border(
                             1.dp,
                             color = Color.White,
-                            shape = RoundedCornerShape(25.dp)
+                            shape = RoundedCornerShape(12.dp)
                         )
                         .height(height = 55.dp)
                         .background(Vibrant.copy(.5f))
                         .clickable {
+                            Log.d("epsodeee", " BEFORE  current position : ${viewModal.exoPlayer.currentPosition} , currentPositionVar : ${currentPosition}")
+                            currentPosition = viewModal.exoPlayer.currentPosition
+                            Log.d("epsodeee", " AFTER  current position : ${viewModal.exoPlayer.currentPosition} , currentPositionVar : ${currentPosition}")
                             URL = ep.url
+                            viewModal.exoPlayer.playWhenReady = true
+                            shouldSeek = true
+                            Log.d("epsodeee",shouldSeek.toString())
                         },
-
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
                         ep.quality,
-                        modifier = Modifier.padding(start = 5.dp, end = 5.dp),
-                        fontSize = 20.sp,
+                        modifier = Modifier.padding(start = 10.dp, end = 10.dp),
+                        fontSize = 15.sp,
                         color = Color.White,
                         textAlign = TextAlign.Center
                     )
                 }
             }
         }
-
 
 
         Text("Episodes" , modifier = Modifier
@@ -409,22 +388,25 @@ fun CustomVideoPlayer(
                         .fillMaxWidth()
                         .height(height = 70.dp)
                         .padding(10.dp)
-                        .clip(RoundedCornerShape(25.dp))
+                        .clip(RoundedCornerShape(20.dp))
                         .border(
                             width = 1.dp,
                             color = Color.White,
-                            shape = RoundedCornerShape(25.dp)
+                            shape = RoundedCornerShape(20.dp)
                         )
-                        .background(
-                            if (ep.number - 1 == viewModal.currentEpisode) VibrantDark.copy(
-                                .5f
-                            ) else Vibrant
-                        )
+
                         .clickable {
-                            Log.d("ep", "ep id : ${ep.number}")
+                            Log.d("epsodeee", "ep id : ${ep.number}  currentEp : ${viewModal.currentEpisode}")
                             viewModal.updateCurrentEpisode(ep.number)
                             currentEpPlayingID = ep.id
-                        },
+                            viewModal.exoPlayer.seekTo(0)
+                            viewModal.exoPlayer.playWhenReady = true
+                        }
+                        .background(
+                            if (ep.number  == viewModal.currentEpisode) VibrantDark.copy(
+                                .5f
+                            ) else Vibrant
+                        ),
                     contentAlignment = Alignment.Center,
                 ) {
 
@@ -432,16 +414,18 @@ fun CustomVideoPlayer(
                 }
             }
         }
+
     }
 }
 
+@OptIn(UnstableApi::class)
 @Composable
 fun PlayerControles(
     modifier: Modifier = Modifier,
     isVisible: () -> Boolean,
     isPlaying: () -> Boolean,
     title: () -> String,
-    onReplayClick: () -> Unit,
+    onBackwardClick: () -> Unit,
     onForwardClick: () -> Unit,
     onPauseToggle: () -> Unit,
     totalDuration: () -> Long,
@@ -470,7 +454,7 @@ fun PlayerControles(
                 .align(Alignment.Center)
                 .fillMaxWidth(),
                 isPlaying = isPlaying,
-                onReplayClick = { onReplayClick() },
+                onBackwardClick = { onBackwardClick() },
                 onForwardClick = { onForwardClick() },
                 onPauseToggle = { onPauseToggle() },
                 playbackState = { playbackState() }
@@ -508,21 +492,23 @@ fun PlayerControles(
 fun CenterControles(
     modifier: Modifier = Modifier,
     isPlaying: () -> Boolean,
-    onReplayClick: () -> Unit,
+    onBackwardClick: () -> Unit,
     onForwardClick: () -> Unit,
     onPauseToggle: () -> Unit,
     playbackState: () -> Int,
 ){
 
-    val isVideoPlaying = remember(isPlaying()) { isPlaying() }.also {
-        //Log.d("video1" , "isplaying : ${isPlaying()}")
-    }
-    val playerState = remember(playbackState()) { playbackState() }.also {
-        // Log.d("video1" , " playbackState : ${playbackState()}")
-    }
+    val isVideoPlaying = remember(isPlaying()) { isPlaying() }
+//        .also {
+//        //Log.d("video1" , "isplaying : ${isPlaying()}")
+//    }
+    val playerState = remember(playbackState()) { playbackState() }
+//        .also {
+//        // Log.d("video1" , " playbackState : ${playbackState()}")
+//    }
 
     Row (modifier = modifier.fillMaxWidth(),verticalAlignment = Alignment.CenterVertically , horizontalArrangement = Arrangement.SpaceEvenly){
-        IconButton(modifier = Modifier.size(40.dp), onClick = {onReplayClick()}) {
+        IconButton(modifier = Modifier.size(40.dp), onClick = {onBackwardClick()}) {
             Icon(
                 painter = painterResource(id = R.drawable.backward_10s),
                 contentDescription = "forward",
@@ -573,8 +559,7 @@ fun TopControles(modifier: Modifier = Modifier , title : () -> String ){
 }
 
 
-
-@OptIn(ExperimentalMaterial3Api::class)
+@androidx.annotation.OptIn(UnstableApi::class)
 @Composable
 fun BottomControles(
     modifier: Modifier = Modifier,

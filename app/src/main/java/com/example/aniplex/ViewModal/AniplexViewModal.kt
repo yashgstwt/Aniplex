@@ -1,6 +1,7 @@
 package com.example.aniplex.ViewModal
 
 
+import android.app.Application
 import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -8,33 +9,32 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.aniplex.DataLayer.QuoteApi.RandomQuote
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.ExoPlayer
 import com.example.aniplex.DataLayer.aniplexApi.Episode
 import com.example.aniplex.DataLayer.aniplexApi.Source
 import com.example.aniplex.Repository.AniplexRepo
 import com.example.aniplex.Repository.QuoteRepo
 import com.example.aniplex.Repository.RoomDBRepo
+import com.example.aniplex.UILayer.PLAYER_SEEK_BACK_INCREMENT
+import com.example.aniplex.UILayer.PLAYER_SEEK_FORWARD_INCREMENT
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.time.debounce
 import kotlinx.coroutines.withContext
 import retrofit2.HttpException
 import javax.inject.Inject
-import kotlin.math.log
 
 
+@UnstableApi
 @HiltViewModel
-class AniplexViewModal @Inject constructor( private val repo : AniplexRepo ,  val db : RoomDBRepo , val quoteRepo: QuoteRepo) : ViewModel() {
+class AniplexViewModal @Inject constructor( private val repo : AniplexRepo ,  val db : RoomDBRepo , val quoteRepo: QuoteRepo, val app: Application) : ViewModel() {
 
     var AnimeInfo : GetAnimeInfo by mutableStateOf(GetAnimeInfo.Loading)
 
@@ -62,7 +62,7 @@ class AniplexViewModal @Inject constructor( private val repo : AniplexRepo ,  va
 
     var recentReleasedPage:Int by mutableIntStateOf(1)
 
-    var currentEpisode by mutableIntStateOf(0)
+    var currentEpisode by mutableIntStateOf(1)
 
 
     fun updateCurrentEpisode(ep:Int){
@@ -186,11 +186,16 @@ class AniplexViewModal @Inject constructor( private val repo : AniplexRepo ,  va
             Log.d("viewmodal", "updateOrientation called : ${_isLandscape.value}")
         }
     }
+
+    val exoPlayer =
+        ExoPlayer.Builder(app).also {
+            it.setSeekBackIncrementMs(PLAYER_SEEK_BACK_INCREMENT)
+            it.setSeekForwardIncrementMs(PLAYER_SEEK_FORWARD_INCREMENT)
+        }.build()
+
+    override fun onCleared() {
+        super.onCleared()
+        exoPlayer.release()
+    }
+
 }
-
-
-
-//2024-10-06 00:20:57.673 30717-30717 DetailScreen            com.example.aniplex                  D   AnimeInfo(description=Based on a picture book written about the 2004 earthquake in Chuuetsu, Niigata prefecture.
-//
-//                                                                                                    Mari's three puppies were just born, when the earthquake in Yamakoshimura started. Now their home is in ruins, and their owner, an old man is trapped under the debris. Mari somehow manages to break her chain, and encourages the old man, until help arrives. In the end, someone saves the old man, but he can't take in the dogs, so they remain in the now abandoned village. Can Mari and the puppies live on like this?, episodes=[Episode(id=yamakoshi-mura-no-mari-to-sanbiki-no-koinu-dub-episode-1, number=1, url=https://anitaku.pe//yamakoshi-mura-no-mari-to-sanbiki-no-koinu-dub-episode-1)], genres=[Drama, Kids], id=yamakoshi-mura-no-mari-to-sanbiki-no-koinu-dub, image=https://gogocdn.net/cover/yamakoshi-mura-no-mari-to-sanbiki-no-koinu-dub.png, otherName=Yamakoshi-mura no Mari to Sanbiki no Koinu, Yamakoshi Mura no Mari to San-biki no Koinu, 山古志村のマリと三匹の子犬, releaseDate=2006, status=Completed, subOrDub=dub, title=Yamakoshi Mura no Mari to Sanbiki no Koinu (Dub), totalEpisodes=1, type=OVA, url=https://anitaku.pe/category/yamakoshi-mura-no-mari-to-sanbiki-no-koinu-dub)
-//2024-10-06 00:20:57.673 30717-30717 DetailScreen            com.example.aniplex                  D   https://anitaku.pe/category/yamakoshi-mura-no-mari-to-sanbiki-no-koinu-dub
